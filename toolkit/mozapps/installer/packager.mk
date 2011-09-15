@@ -302,10 +302,9 @@ INNER_MAKE_PACKAGE	= \
   make -C ../embedding/android gecko.ap_ && \
   cp ../embedding/android/gecko.ap_ $(_ABS_DIST) && \
   ( cd $(STAGEPATH)$(MOZ_PKG_DIR)$(_BINPATH) && \
-    rm -rf lib && \
     mkdir -p lib/$(ABI_DIR) && \
     cp lib*.so lib && \
-    mv lib/libmozutils.so lib/$(ABI_DIR) && \
+    mv lib/libmozutils.so $(MOZ_CHILD_PROCESS_NAME) lib/$(ABI_DIR) && \
     rm -f lib.id && \
     for SOMELIB in lib/*.so ; \
     do \
