@@ -77,19 +77,19 @@ abstract public class GeckoApp
     public static final String ACTION_DEBUG       = "org.mozilla.gecko.DEBUG";
     public static final String ACTION_BOOKMARK    = "org.mozilla.gecko.BOOKMARK";
 
-    public static AbsoluteLayout mainLayout;
+    public static LinearLayout mainLayout;
+    public static AbsoluteLayout geckoLayout;
     public static GeckoSurfaceView surfaceView;
     public static GeckoApp mAppContext;
     public static boolean mFullscreen = false;
     public static File sGREDir = null;
-    static Thread mLibLoadThread = null;
     public Handler mMainHandler;
     private IntentFilter mConnectivityFilter;
     private BroadcastReceiver mConnectivityReceiver;
 
-    enum LaunchState {PreLaunch, Launching, WaitButton,
+    enum LaunchState {Launching, WaitButton,
                       Launched, GeckoRunning, GeckoExiting};
-    private static LaunchState sLaunchState = LaunchState.PreLaunch;
+    private static LaunchState sLaunchState = LaunchState.Launching;
     private static boolean sTryCatchAttached = false;
 
 
@@ -288,37 +288,33 @@ abstract public class GeckoApp
         final Intent i = intent;
         new Thread() {
             public void run() {
-                try {
-                    if (mLibLoadThread != null)
-                        mLibLoadThread.join();
-                } catch (InterruptedException ie) {}
+                File cacheFile = GeckoAppShell.getCacheDir();
+                File libxulFile = new File(cacheFile, "libxul.so");
 
-                // Show the URL we are about to load, if the intent has one
-                if (Intent.ACTION_VIEW.equals(i.getAction())) {
-                    surfaceView.mSplashURL = i.getDataString();
-                }
-                surfaceView.drawSplashScreen();
-
-                // unpack files in the components directory
-                try {
-                    unpackComponents();
-                } catch (FileNotFoundException fnfe) {
-                    Log.e(LOG_FILE_NAME, "error unpacking components", fnfe);
-                    Looper.prepare();
-                    showErrorDialog(getString(R.string.error_loading_file));
-                    Looper.loop();
-                    return;
-                } catch (IOException ie) {
-                    Log.e(LOG_FILE_NAME, "error unpacking components", ie);
-                    String msg = ie.getMessage();
-                    Looper.prepare();
-                    if (msg != null && msg.equalsIgnoreCase("No space left on device"))
-                        showErrorDialog(getString(R.string.no_space_to_start_error));
-                    else
-                        showErrorDialog(getString(R.string.error_loading_file));
-                    Looper.loop();
-                    return;
-                }
+                if ((!libxulFile.exists() ||
+                     new File(getApplication().getPackageResourcePath()).lastModified() >= libxulFile.lastModified())) {
+                    File[] libs = cacheFile.listFiles(new FilenameFilter() {
+                            public boolean accept(File dir, String name) {
+                                return name.endsWith(".so");
+                            }
+                        });
+                    if (libs != null) {
+                        for (int i = 0; i < libs.length; i++) {
+                            libs[i].delete();
+                        }
+                    }
+                 }
+ 
+                // At some point while loading the gecko libs our default locale gets set
+                // so just save it to locale here and reset it as default after the join
+                Locale locale = Locale.getDefault();
+                GeckoAppShell.loadGeckoLibs(
+                    getApplication().getPackageResourcePath());
+                Locale.setDefault(locale);
+                Resources res = getBaseContext().getResources();
+                Configuration config = res.getConfiguration();
+                config.locale = locale;
+                res.updateConfiguration(config, res.getDisplayMetrics());
 
                 // and then fire us up
                 try {
@@ -334,6 +330,25 @@ abstract public class GeckoApp
                 }
             }
         }.start();
+        return true;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        final Activity self = this;
+
+        MenuItem quitItem = menu.add("Quit");
+        quitItem.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        quitItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                public boolean onMenuItemClick(MenuItem item) {
+                    Log.i(LOG_FILE_NAME, "pleaseKillMe");
+                    if (surfaceView != null)
+                        surfaceView.saveLast();
+                    System.exit(0);
+                    return true;
+                }
+            });
         return true;
     }
 
@@ -362,11 +377,6 @@ abstract public class GeckoApp
             });
         }
 
-        SharedPreferences settings = getPreferences(Activity.MODE_PRIVATE);
-        String localeCode = settings.getString(getPackageName() + ".locale", "");
-        if (localeCode != null && localeCode.length() > 0)
-            GeckoAppShell.setSelectedLocale(localeCode);
-
         Log.i(LOG_FILE_NAME, "create");
         super.onCreate(savedInstanceState);
 
@@ -382,12 +392,60 @@ abstract public class GeckoApp
         else
             mainLayout.removeAllViews();
 
-        mainLayout = new AbsoluteLayout(this);
-        mainLayout.addView(surfaceView,
-                           new AbsoluteLayout.LayoutParams(AbsoluteLayout.LayoutParams.MATCH_PARENT, // level 8
-                                                           AbsoluteLayout.LayoutParams.MATCH_PARENT,
-                                                           0,
-                                                           0));
+        mainLayout = new LinearLayout(this);
+        LinearLayout.LayoutParams layoutParams =
+            new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,
+                                          ViewGroup.LayoutParams.FILL_PARENT);
+        mainLayout.setLayoutParams(layoutParams);
+        mainLayout.setOrientation(LinearLayout.VERTICAL);
+
+        // setup awesome bar
+        LinearLayout addressBar = new LinearLayout(this);
+        mainLayout.addView(addressBar);
+
+        ImageButton favIcon = new ImageButton(this);
+        favIcon.setImageResource(R.drawable.favicon);
+        addressBar.addView(favIcon);
+
+        final EditText awesomeBar = new EditText(this);
+        LinearLayout.LayoutParams awesomeBarLayout =
+            new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                                          ViewGroup.LayoutParams.WRAP_CONTENT);
+        awesomeBarLayout.weight = 1.0f;
+        awesomeBar.setLayoutParams(awesomeBarLayout);
+        awesomeBar.setImeOptions(0x2); // Go
+        awesomeBar.setInputType(awesomeBar.getInputType()
+                                | EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                                | EditorInfo.TYPE_TEXT_VARIATION_FILTER);
+        awesomeBar.setOnKeyListener(new View.OnKeyListener() {
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                    if (event.getAction() != KeyEvent.ACTION_DOWN ||
+                        keyCode != KeyEvent.KEYCODE_ENTER) {
+                        return false;
+                    }
+                    GeckoAppShell.sendEventToGecko(new GeckoEvent(awesomeBar.getText().toString()));
+                    return true;
+                }
+            });
+        addressBar.addView(awesomeBar);
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
+        ImageButton reload = new ImageButton(this);
+        reload.setImageResource(R.drawable.reload);
+        addressBar.addView(reload);
+
+        // setup gecko layout
+        geckoLayout = new AbsoluteLayout(this);
+        mainLayout.addView(geckoLayout);
+        
+        geckoLayout.addView(surfaceView,
+                            new AbsoluteLayout.LayoutParams(AbsoluteLayout.LayoutParams.MATCH_PARENT, // level 8
+                                                            AbsoluteLayout.LayoutParams.MATCH_PARENT,
+                                                            0,
+
+                                                            0));
+
         setContentView(mainLayout,
                        new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,
                                                   ViewGroup.LayoutParams.FILL_PARENT));
@@ -400,21 +458,30 @@ abstract public class GeckoApp
                                     LaunchState.Launching))
             return;
 
-        checkAndLaunchUpdate();
-        mLibLoadThread = new Thread(new Runnable() {
-            public void run() {
-                // At some point while loading the gecko libs our default locale gets set
-                // so just save it to locale here and reset it as default after the join
-                Locale locale = Locale.getDefault();
-                GeckoAppShell.loadGeckoLibs(
-                    getApplication().getPackageResourcePath());
-                Locale.setDefault(locale);
-                Resources res = getBaseContext().getResources();
-                Configuration config = res.getConfiguration();
-                config.locale = locale;
-                res.updateConfiguration(config, res.getDisplayMetrics());
-            }});
-        mLibLoadThread.start();
+        mMainHandler.post(new Runnable() {
+                public void run() {
+                    surfaceView.loadStartupBitmap();
+                }
+            });
+
+        final GeckoApp self = this;
+ 
+        mMainHandler.postDelayed(new Runnable() {
+                public void run() {
+                    SharedPreferences settings = getPreferences(Activity.MODE_PRIVATE);
+                    String localeCode = settings.getString(getPackageName() + ".locale", "");
+                    if (localeCode != null && localeCode.length() > 0)
+                        GeckoAppShell.setSelectedLocale(localeCode);
+
+                    if (!checkLaunchState(LaunchState.Launched)) {
+                        return;
+                    }
+
+                    if (false) {
+                        checkAndLaunchUpdate();
+                    }
+                }
+            }, 50);
     }
 
     @Override
@@ -494,8 +561,7 @@ abstract public class GeckoApp
         super.onResume();
 
         // Just in case. Normally we start in onNewIntent
-        if (checkLaunchState(LaunchState.PreLaunch) ||
-            checkLaunchState(LaunchState.Launching))
+        if (checkLaunchState(LaunchState.Launching))
             onNewIntent(getIntent());
 
         registerReceiver(mConnectivityReceiver, mConnectivityFilter);
@@ -542,6 +608,10 @@ abstract public class GeckoApp
     public void onDestroy()
     {
         Log.i(LOG_FILE_NAME, "destroy");
+
+        if (surfaceView != null)
+            surfaceView.saveLast();
+
         // Tell Gecko to shutting down; we'll end up calling System.exit()
         // in onXreExit.
         if (isFinishing())
@@ -569,107 +639,6 @@ abstract public class GeckoApp
 
     abstract public String getPackageName();
     abstract public String getContentProcessName();
-
-    protected void unpackComponents()
-        throws IOException, FileNotFoundException
-    {
-        File applicationPackage = new File(getApplication().getPackageResourcePath());
-        File componentsDir = new File(sGREDir, "components");
-        if (componentsDir.lastModified() == applicationPackage.lastModified())
-            return;
-
-        componentsDir.mkdir();
-        componentsDir.setLastModified(applicationPackage.lastModified());
-
-        GeckoAppShell.killAnyZombies();
-
-        ZipFile zip = new ZipFile(applicationPackage);
-
-        byte[] buf = new byte[32768];
-        try {
-            if (unpackFile(zip, buf, null, "removed-files"))
-                removeFiles();
-        } catch (Exception ex) {
-            // This file may not be there, so just log any errors and move on
-            Log.w(LOG_FILE_NAME, "error removing files", ex);
-        }
-        unpackFile(zip, buf, null, "application.ini");
-        unpackFile(zip, buf, null, getContentProcessName());
-        try {
-            unpackFile(zip, buf, null, "update.locale");
-        } catch (Exception e) {/* this is non-fatal */}
-
-        // copy any .xpi file into an extensions/ directory
-        Enumeration<? extends ZipEntry> zipEntries = zip.entries();
-        while (zipEntries.hasMoreElements()) {
-            ZipEntry entry = zipEntries.nextElement();
-            if (entry.getName().startsWith("extensions/") && entry.getName().endsWith(".xpi")) {
-                Log.i("GeckoAppJava", "installing extension : " + entry.getName());
-                unpackFile(zip, buf, entry, entry.getName());
-            }
-        }
-
-        // copy any hyphenation dictionaries file into a hyphenation/ directory
-        Enumeration<? extends ZipEntry> hyphenEntries = zip.entries();
-        while (hyphenEntries.hasMoreElements()) {
-            ZipEntry entry = hyphenEntries.nextElement();
-            if (entry.getName().startsWith("hyphenation/")) {
-                Log.i("GeckoAppJava", "installing hyphenation : " + entry.getName());
-                unpackFile(zip, buf, entry, entry.getName());
-            }
-        }
-    }
-
-    void removeFiles() throws IOException {
-        BufferedReader reader = new BufferedReader(
-            new FileReader(new File(sGREDir, "removed-files")));
-        try {
-            for (String removedFileName = reader.readLine(); 
-                 removedFileName != null; removedFileName = reader.readLine()) {
-                File removedFile = new File(sGREDir, removedFileName);
-                if (removedFile.exists())
-                    removedFile.delete();
-            }
-        } finally {
-            reader.close();
-        }
-        
-    }
-
-    private boolean unpackFile(ZipFile zip, byte[] buf, ZipEntry fileEntry,
-                            String name)
-        throws IOException, FileNotFoundException
-    {
-        if (fileEntry == null)
-            fileEntry = zip.getEntry(name);
-        if (fileEntry == null)
-            throw new FileNotFoundException("Can't find " + name + " in " +
-                                            zip.getName());
-
-        File outFile = new File(sGREDir, name);
-        if (outFile.lastModified() == fileEntry.getTime() &&
-            outFile.length() == fileEntry.getSize())
-            return false;
-
-        File dir = outFile.getParentFile();
-        if (!dir.exists())
-            dir.mkdirs();
-
-        InputStream fileStream;
-        fileStream = zip.getInputStream(fileEntry);
-
-        OutputStream outStream = new FileOutputStream(outFile);
-
-        while (fileStream.available() > 0) {
-            int read = fileStream.read(buf, 0, buf.length);
-            outStream.write(buf, 0, read);
-        }
-
-        fileStream.close();
-        outStream.close();
-        outFile.setLastModified(fileEntry.getTime());
-        return true;
-    }
 
     public void addEnvToIntent(Intent intent) {
         Map<String,String> envMap = System.getenv();

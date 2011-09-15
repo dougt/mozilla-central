@@ -144,7 +144,7 @@ MOZ_ANDROID_DRAWABLES += embedding/android/resources/drawable/crash_reporter.png
 RES_LAYOUT += res/layout/crash_reporter.xml
 endif
 
-MOZ_ANDROID_DRAWABLES += embedding/android/resources/drawable/desktop_notification.png
+MOZ_ANDROID_DRAWABLES += embedding/android/resources/drawable/desktop_notification.png embedding/android/resources/drawable/favicon.png embedding/android/resources/drawable/reload.png
 
 MOZ_ANDROID_DRAWABLES += $(shell if test -e $(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/android-resources.mn; then cat $(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/android-resources.mn | tr '\n' ' ';  fi)
 
@@ -161,7 +161,7 @@ include $(topsrcdir)/config/android-common.mk
 # Instead of on the .class files, since more than one .class file might be produced per .java file
 classes.dex: $(JAVAFILES) $(PROCESSEDJAVAFILES) R.java
 	$(NSINSTALL) -D classes
-	$(JAVAC) $(JAVAC_FLAGS) -d classes  $(addprefix $(srcdir)/,$(JAVAFILES)) $(PROCESSEDJAVAFILES) R.java
+	$(JAVAC) $(JAVAC_FLAGS) -Xlint:unchecked -Xlint:deprecation -d classes  $(addprefix $(srcdir)/,$(JAVAFILES)) $(PROCESSEDJAVAFILES) R.java
 	$(DX) --dex --output=$@ classes
 
 AndroidManifest.xml $(PROCESSEDJAVAFILES): % : %.in

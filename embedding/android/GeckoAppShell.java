@@ -1047,7 +1047,7 @@ public class GeckoAppShell
     }
 
     public static void hideProgressDialog() {
-        GeckoApp.surfaceView.mShowingSplashScreen = false;
+        GeckoApp.surfaceView.mShowingLoadScreen = false;
     }
 
     public static void setKeepScreenOn(final boolean on) {
@@ -1354,17 +1354,17 @@ public class GeckoAppShell
                                                                                      (int)x,
                                                                                      (int)y);
 
-                    if (GeckoApp.mainLayout.indexOfChild(view) == -1) {
+                    if (GeckoApp.geckoLayout.indexOfChild(view) == -1) {
                         view.setWillNotDraw(false);
                         if(view instanceof SurfaceView)
                             ((SurfaceView)view).setZOrderOnTop(true);
 
-                        GeckoApp.mainLayout.addView(view, lp);
+                        GeckoApp.geckoLayout.addView(view, lp);
                     }
                     else
                     {
                         try {
-                            GeckoApp.mainLayout.updateViewLayout(view, lp);
+                            GeckoApp.geckoLayout.updateViewLayout(view, lp);
                         } catch (IllegalArgumentException e) {
                             Log.i("updateViewLayout - IllegalArgumentException", "e:" + e);
                             // it can be the case where we
@@ -1381,7 +1381,7 @@ public class GeckoAppShell
         getMainHandler().post(new Runnable() { 
                 public void run() {
                     try {
-                        GeckoApp.mainLayout.removeView(view);
+                        GeckoApp.geckoLayout.removeView(view);
                     } catch (Exception e) {}
                 }
             });
