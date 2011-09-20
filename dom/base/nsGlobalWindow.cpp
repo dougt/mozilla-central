@@ -249,6 +249,10 @@
 #include "mozilla/Telemetry.h"
 #include "nsLocation.h"
 
+#if defined(ANDROID) && defined(DEBUG)
+#include <android/log.h>
+#endif
+
 #ifdef PR_LOGGING
 static PRLogModuleInfo* gDOMLeakPRLog;
 #endif
@@ -4524,6 +4528,9 @@ nsGlobalWindow::Dump(const nsAString& aStr)
     nsMemory::Free(cstr);
   }
 
+#if defined(ANDROID) && defined(DEBUG)
+  __android_log_print(ANDROID_LOG_INFO, "GeckoDump", "%s", cstr);
+#endif
   return NS_OK;
 }
 
