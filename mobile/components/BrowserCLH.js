@@ -7,8 +7,9 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 function resolveURIInternal(aCmdLine, aArgument) {
+  let uri = "about:blank"
   try {
-      let uri = aCmdLine.resolveURI(aArgument);
+      uri = aCmdLine.resolveURI(aArgument);
       let urifixup = Cc["@mozilla.org/docshell/urifixup;1"].getService(Ci.nsIURIFixup);
       uri = urifixup.createFixupURI(aArgument, 1);
   } catch (e) {
