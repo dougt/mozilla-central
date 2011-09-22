@@ -400,7 +400,8 @@ abstract public class GeckoApp
 
         if (surfaceView == null)
             surfaceView = new GeckoSurfaceView(this);
-        else
+
+        if (mainLayout != null)
             mainLayout.removeAllViews();
 
         mainLayout = new LinearLayout(this);
@@ -447,6 +448,9 @@ abstract public class GeckoApp
         addressBar.addView(reload);
 
         // setup gecko layout
+        if (geckoLayout != null)
+            geckoLayout.removeAllViews();
+
         geckoLayout = new AbsoluteLayout(this);
         mainLayout.addView(geckoLayout);
         
