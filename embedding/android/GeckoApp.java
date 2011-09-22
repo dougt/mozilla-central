@@ -150,6 +150,8 @@ abstract public class GeckoApp
 
     String[] getPluginDirectories() {
 
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - start of getPluginDirectories");
+
         ArrayList<String> directories = new ArrayList<String>();
         PackageManager pm = this.mAppContext.getPackageManager();
         List<ResolveInfo> plugins = pm.queryIntentServices(new Intent(PLUGIN_ACTION),
@@ -265,7 +267,9 @@ abstract public class GeckoApp
             }
         }
 
-        return directories.toArray(new String[directories.size()]);
+        String [] result = directories.toArray(new String[directories.size()]);
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - end of getPluginDirectories");
+        return result;
     }
 
     Class<?> getPluginClass(String packageName, String className)
@@ -280,6 +284,8 @@ abstract public class GeckoApp
     // Returns true when the intent is going to be handled by gecko launch
     boolean launch(Intent intent)
     {
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - launch");
+
         if (!checkAndSetLaunchState(LaunchState.Launching, LaunchState.Launched))
             return false;
 
@@ -315,6 +321,8 @@ abstract public class GeckoApp
                 Configuration config = res.getConfiguration();
                 config.locale = locale;
                 res.updateConfiguration(config, res.getDisplayMetrics());
+
+                Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - runGecko");
 
                 // and then fire us up
                 try {
@@ -356,6 +364,8 @@ abstract public class GeckoApp
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - onCreate");
+
         mAppContext = this;
         mMainHandler = new Handler();
 
@@ -450,6 +460,9 @@ abstract public class GeckoApp
                        new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,
                                                   ViewGroup.LayoutParams.FILL_PARENT));
 
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - UI almost up");
+
+
         mConnectivityFilter = new IntentFilter();
         mConnectivityFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         mConnectivityReceiver = new GeckoConnectivityReceiver();
@@ -468,6 +481,9 @@ abstract public class GeckoApp
  
         mMainHandler.postDelayed(new Runnable() {
                 public void run() {
+
+                    Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - pre checkLaunchState");
+
                     SharedPreferences settings = getPreferences(Activity.MODE_PRIVATE);
                     String localeCode = settings.getString(getPackageName() + ".locale", "");
                     if (localeCode != null && localeCode.length() > 0)
@@ -486,6 +502,8 @@ abstract public class GeckoApp
 
     @Override
     protected void onNewIntent(Intent intent) {
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - onNewIntent");
+
         if (checkLaunchState(LaunchState.GeckoExiting)) {
             // We're exiting and shouldn't try to do anything else just incase
             // we're hung for some reason we'll force the process to exit
@@ -599,6 +617,8 @@ abstract public class GeckoApp
     @Override
     public void onStart()
     {
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - onStart");
+
         Log.i(LOG_FILE_NAME, "start");
         GeckoAppShell.sendEventToGecko(new GeckoEvent(GeckoEvent.ACTIVITY_START));
         super.onStart();
