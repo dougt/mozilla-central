@@ -52,6 +52,8 @@
 #include "nsIMIMEInfo.h"
 #include "nsColor.h"
 
+#include "nsIAndroidBridge.h"
+
 // Some debug #defines
 // #define DEBUG_ANDROID_EVENTS
 // #define DEBUG_ANDROID_WIDGET
@@ -267,6 +269,8 @@ public:
 
     void ExecuteNextRunnable();
 
+    void HandleGeckoMessage(const nsAString& message);
+
 protected:
     static AndroidBridge *sBridge;
 
@@ -333,6 +337,7 @@ protected:
     jmethodID jCreateShortcut;
     jmethodID jGetShowPasswordSetting;
     jmethodID jPostToJavaThread;
+    jmethodID jHandleGeckoMessage;
 
     // stuff we need for CallEglCreateWindowSurface
     jclass jEGLSurfaceImplClass;
@@ -349,6 +354,27 @@ protected:
 };
 
 }
+
+
+
+#define NS_ANDROIDBRIDGE_CID \
+{ 0x0FE2321D, 0xEBD9, 0x467D, \
+    { 0xA7, 0x43, 0x03, 0xA6, 0x8D, 0x40, 0x59, 0x9E } }
+
+class nsAndroidBridge : public nsIAndroidBridge
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIANDROIDBRIDGE
+
+  nsAndroidBridge();
+
+private:
+  ~nsAndroidBridge();
+
+protected:
+};
+
 
 extern "C" JNIEnv * GetJNIForThread();
 extern PRBool mozilla_AndroidBridge_SetMainThread(void *);

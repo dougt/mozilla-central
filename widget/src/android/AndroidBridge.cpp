@@ -150,6 +150,7 @@ AndroidBridge::Init(JNIEnv *jEnv,
     jCreateShortcut = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "createShortcut", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     jGetShowPasswordSetting = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "getShowPasswordSetting", "()Z");
     jPostToJavaThread = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "postToJavaThread", "(Z)V");
+    jHandleGeckoMessage = (jmethodID) jEnv->GetStaticMethodID(jGeckoAppShellClass, "handleGeckoMessage", "(Ljava/lang/String;)V");
 
     jEGLContextClass = (jclass) jEnv->NewGlobalRef(jEnv->FindClass("javax/microedition/khronos/egl/EGLContext"));
     jEGL10Class = (jclass) jEnv->NewGlobalRef(jEnv->FindClass("javax/microedition/khronos/egl/EGL10"));
@@ -974,6 +975,28 @@ AndroidBridge::ExecuteNextRunnable()
     }
     __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "leaving %s", __PRETTY_FUNCTION__);
 }
+
+void
+AndroidBridge::HandleGeckoMessage(const nsAString& aMessage)
+{
+    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "%s", __PRETTY_FUNCTION__);
+    JNIEnv* env = AndroidBridge::AttachThread(false);
+    if (!env) {
+        __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "no jni env in %s!!", __PRETTY_FUNCTION__);
+        return;
+    }
+
+    jstring jMessage = mJNIEnv->NewString(nsPromiseFlatString(aMessage).get(), aMessage.Length());
+    env->CallStaticVoidMethod(mGeckoAppShellClass, jHandleGeckoMessage, jMessage);
+
+    jthrowable ex = env->ExceptionOccurred();
+    if (ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "leaving %s", __PRETTY_FUNCTION__);
+}
+
 bool
 AndroidBridge::HasNativeBitmapAccess()
 {
@@ -1054,3 +1077,23 @@ AndroidBridge::UnlockBitmap(jobject bitmap)
     if ((err = AndroidBitmap_unlockPixels(JNI(), bitmap)) != 0)
         ALOG_BRIDGE("AndroidBitmap_unlockPixels failed! (error %d)", err);
 }
+
+
+/* Implementation file */
+NS_IMPL_ISUPPORTS1(nsAndroidBridge, nsIAndroidBridge)
+
+nsAndroidBridge::nsAndroidBridge()
+{
+}
+
+nsAndroidBridge::~nsAndroidBridge()
+{
+}
+
+/* void handleGeckoEvent (in AString message); */
+NS_IMETHODIMP nsAndroidBridge::HandleGeckoMessage(const nsAString & message)
+{
+    AndroidBridge::Bridge()->HandleGeckoMessage(message);
+    return NS_OK;
+}
+
