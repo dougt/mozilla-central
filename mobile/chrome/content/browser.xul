@@ -69,6 +69,13 @@ FennecProgressListener.prototype = {
 
     onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
         dump("progressListener.onStateChange");
+
+        try {
+            Cc["@mozilla.org/android/bridge;1"]
+                .getService(Ci.nsIAndroidBridge)
+                .handleGeckoMessage("{\"gecko\": {\"type\": \"value\", \"event_specific\": \"value\"}}");
+        } catch (e) { dump("aa " + e); }
+
     },
 
     onLocationChange: function (aBrowser, aWebProgress, aRequest, aLocationURI) { dump("progressListener.onLocationChange"); },

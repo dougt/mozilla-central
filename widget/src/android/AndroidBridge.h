@@ -52,6 +52,8 @@
 #include "nsIMIMEInfo.h"
 #include "nsColor.h"
 
+#include "nsIAndroidBridge.h"
+
 // Some debug #defines
 // #define DEBUG_ANDROID_EVENTS
 // #define DEBUG_ANDROID_WIDGET
@@ -282,6 +284,8 @@ public:
 
     bool LockWindow(void *window, unsigned char **bits, int *width, int *height, int *format, int *stride);
     bool UnlockWindow(void *window);
+    
+    void HandleGeckoMessage(const nsAString& message);
 
     bool InitCamera(const nsCString& contentType, PRUint32 camera, PRUint32 *width, PRUint32 *height, PRUint32 *fps);
 
@@ -358,6 +362,7 @@ protected:
     jmethodID jPostToJavaThread;
     jmethodID jInitCamera;
     jmethodID jCloseCamera;
+    jmethodID jHandleGeckoMessage;
 
     // stuff we need for CallEglCreateWindowSurface
     jclass jEGLSurfaceImplClass;
@@ -381,6 +386,27 @@ protected:
 };
 
 }
+
+
+
+#define NS_ANDROIDBRIDGE_CID \
+{ 0x0FE2321D, 0xEBD9, 0x467D, \
+    { 0xA7, 0x43, 0x03, 0xA6, 0x8D, 0x40, 0x59, 0x9E } }
+
+class nsAndroidBridge : public nsIAndroidBridge
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIANDROIDBRIDGE
+
+  nsAndroidBridge();
+
+private:
+  ~nsAndroidBridge();
+
+protected:
+};
+
 
 extern "C" JNIEnv * GetJNIForThread();
 extern PRBool mozilla_AndroidBridge_SetMainThread(void *);
