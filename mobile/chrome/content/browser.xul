@@ -13,31 +13,40 @@ let Ci = Components.interfaces;
 let Cu = Components.utils;
 let Cr = Components.results;
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/Services.jsm")
+
 function dump(a) {
     Cc["@mozilla.org/consoleservice;1"]
         .getService(Ci.nsIConsoleService)
         .logStringMessage(a);
 }
 
+var fennecProgressListener = null;
+
 function startup() {
+
     window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = new nsBrowserAccess(this);
+    dump("zerdatime " + Date.now() + " - browser chrome startup finished.");
+
+    try {
+        fennecProgressListener = new FennecProgressListener();
+        document.getElementById('home').addProgressListener(fennecProgressListener, Ci.nsIWebProgress.NOTIFY_ALL);
+    } catch (e) { dump("233 doh " + e); }
 }
+
 
 function nsBrowserAccess(chromeWindow) {
     this.chrome = chromeWindow;
 }
 
 nsBrowserAccess.prototype = {
-  QueryInterface: function(aIID) {
-    if (aIID.equals(Ci.nsIBrowserDOMWindow) || aIID.equals(Ci.nsISupports))
-      return this;
-    throw Cr.NS_NOINTERFACE;
-  },
 
   openURI: function browser_openURI(aURI, aOpener, aWhere, aContext) {
       let frame = this.chrome.document.getElementById("home");
-      frame.src = aURI.spec;
-      return frame.contentWindow;
+      frame.loadURI(aURI.spec, null, null);
+      return null;
   },
 
   openURIInFrame: function browser_openURIInFrame(aURI, aOpener, aWhere, aContext) {
@@ -47,14 +56,31 @@ nsBrowserAccess.prototype = {
 
   isTabContentWindow: function(aWindow) {
     return !(this.chrome == aWindow);
-  }
+  },
+
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIBrowserDOMWindow]),
+};
+
+
+function FennecProgressListener(){ dump("FennecProgressListener created"); }
+
+FennecProgressListener.prototype = {
+
+    onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
+        dump("progressListener.onStateChange");
+    },
+
+    onLocationChange: function (aBrowser, aWebProgress, aRequest, aLocationURI) { dump("progressListener.onLocationChange"); },
+    onSecurityChange: function (aBrowser, aWebProgress, aRequest, aState) { dump("progressListener.onSecurityChange"); },
+    onProgressChange: function (aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) { dump("progressListener.onProgressChange");},
+    onStatusChange: function (aBrowser, aWebProgress, aRequest, aStatus, aMessage) { dump("progressListener.onStatusChange");},
+
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
+                                           Ci.nsISupportsWeakReference]),
 };
 
 </script>
 
-<html:iframe id="home"
-             type="content"
-             src="http://www.google.com"
-             style="width: 480px; height: 800px; overflow: hidden;"/>
+<browser id="home" type="content-primary" flex="1" src="about:blank"/>
 
 </window>
