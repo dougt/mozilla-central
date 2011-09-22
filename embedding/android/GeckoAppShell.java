@@ -71,6 +71,9 @@ import android.net.NetworkInfo;
 import android.graphics.drawable.*;
 import android.graphics.Bitmap;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class GeckoAppShell
 {
     private static final String LOG_FILE_NAME = "GeckoAppShell";
@@ -1618,6 +1621,27 @@ public class GeckoAppShell
             sCamera.release();
             sCamera = null;
             sCameraBuffer = null;
+        }
+    }
+
+    public static void handleGeckoMessage(String message) {
+        Log.i("GeckoShell", "handleGeckoMessage called with " + message);
+
+        //        
+        //        {"gecko": {
+        //                "type": "value",
+        //                "event_specific": "value",
+        //                ....
+
+
+        try {
+            JSONObject json = new JSONObject(message);
+            JSONObject geckoObject = json.getJSONObject("gecko");
+            String type = geckoObject.getString("type");
+            Log.i("GeckoShell", "handleGeckoMessage called with type: " + type);
+
+        } catch (Exception e) {
+            Log.i("GeckoShell", "handleGeckoMessage throws "+e);
         }
     }
 }
