@@ -1049,10 +1049,6 @@ public class GeckoAppShell
         imm.showInputMethodPicker();
     }
 
-    public static void hideProgressDialog() {
-        GeckoApp.surfaceView.mShowingLoadScreen = false;
-    }
-
     public static void setKeepScreenOn(final boolean on) {
         GeckoApp.mAppContext.runOnUiThread(new Runnable() {
             public void run() {
@@ -1646,10 +1642,14 @@ public class GeckoAppShell
                         }
                     });
                 Log.i("GeckoShell", "URI - " + value);
-            } else if (type.equals("onProgressChange")) {
+            }
+            else if (type.equals("onProgressChange")) {
                 long current = geckoObject.getLong("current");
                 long total = geckoObject.getLong("total");
                 Log.i("GeckoShell", "progress - " + current + "/" + total);
+            }
+            else if (type.equals("hideLoadingScreen")) {
+                GeckoApp.surfaceView.mShowingLoadScreen = false;
             }
 
 
