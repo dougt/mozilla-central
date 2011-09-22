@@ -30,10 +30,20 @@ function startup() {
     window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = new nsBrowserAccess(this);
     dump("zerdatime " + Date.now() + " - browser chrome startup finished.");
 
+    fennecProgressListener = new FennecProgressListener(this);
+
+    let frame = document.getElementById('home');
+    frame.addProgressListener(fennecProgressListener, Ci.nsIWebProgress.NOTIFY_ALL);
+
+    let uri = "about:blank";
     try {
-        fennecProgressListener = new FennecProgressListener();
-        document.getElementById('home').addProgressListener(fennecProgressListener, Ci.nsIWebProgress.NOTIFY_ALL);
-    } catch (e) { dump("233 doh " + e); }
+        uri = Services.prefs.getCharPref("browser.last.uri");
+    } catch (e){};
+
+    dump("Last uri: "+ uri);
+
+    // XXX maybe we don't do this if the launch was kicked off from external
+    frame.loadURI(uri, null, null);
 }
 
 
@@ -62,24 +72,48 @@ nsBrowserAccess.prototype = {
 };
 
 
-function FennecProgressListener(){ dump("FennecProgressListener created"); }
+function SendMessageToJava(obj) {
+    Cc["@mozilla.org/android/bridge;1"]
+        .getService(Ci.nsIAndroidBridge)
+        .handleGeckoMessage(JSON.stringify(obj));
+}
+
+function FennecProgressListener(chromeWindow){
+    this.chrome = chromeWindow;
+}
 
 FennecProgressListener.prototype = {
 
-    onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
-        dump("progressListener.onStateChange");
+    onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) { dump("progressListener.onStateChange"); },
 
-        try {
-            Cc["@mozilla.org/android/bridge;1"]
-                .getService(Ci.nsIAndroidBridge)
-                .handleGeckoMessage("{\"gecko\": {\"type\": \"value\", \"event_specific\": \"value\"}}");
-        } catch (e) { dump("aa " + e); }
+    onLocationChange: function (aBrowser, aWebProgress, aRequest, aLocationURI) {
 
+        let uri = this.chrome.document.getElementById("home").currentURI.spec;
+        let message = {
+            "gecko": {
+                "type"       :   "onLocationChange", 
+                "uri"        :   uri
+            }};
+        
+        SendMessageToJava(message);
+        Services.prefs.setCharPref("browser.last.uri", uri);
     },
 
-    onLocationChange: function (aBrowser, aWebProgress, aRequest, aLocationURI) { dump("progressListener.onLocationChange"); },
     onSecurityChange: function (aBrowser, aWebProgress, aRequest, aState) { dump("progressListener.onSecurityChange"); },
-    onProgressChange: function (aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) { dump("progressListener.onProgressChange");},
+
+    onProgressChange: function (aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) { 
+
+        dump("progressListener.onProgressChange pre");
+        let message = { 
+            "gecko": {
+                "type"       :   "onProgressChange", 
+                "current"    :   aCurTotalProgress,
+                "total"      :   aMaxTotalProgress,
+            }};
+
+        SendMessageToJava(message);
+        dump("progressListener.onProgressChange");
+    },
     onStatusChange: function (aBrowser, aWebProgress, aRequest, aStatus, aMessage) { dump("progressListener.onStatusChange");},
 
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
@@ -88,6 +122,6 @@ FennecProgressListener.prototype = {
 
 </script>
 
-<browser id="home" type="content-primary" flex="1" src="about:blank"/>
+<browser id="home" type="content-primary" flex="1"/>
 
 </window>
