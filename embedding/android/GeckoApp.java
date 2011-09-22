@@ -86,6 +86,7 @@ abstract public class GeckoApp
     public Handler mMainHandler;
     private IntentFilter mConnectivityFilter;
     private BroadcastReceiver mConnectivityReceiver;
+    public static EditText mAwesomeBar;
 
     enum LaunchState {Launching, WaitButton,
                       Launched, GeckoRunning, GeckoExiting};
@@ -417,27 +418,27 @@ abstract public class GeckoApp
         favIcon.setImageResource(R.drawable.favicon);
         addressBar.addView(favIcon);
 
-        final EditText awesomeBar = new EditText(this);
+        mAwesomeBar = new EditText(this);
         LinearLayout.LayoutParams awesomeBarLayout =
             new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                           ViewGroup.LayoutParams.WRAP_CONTENT);
         awesomeBarLayout.weight = 1.0f;
-        awesomeBar.setLayoutParams(awesomeBarLayout);
-        awesomeBar.setImeOptions(0x2); // Go
-        awesomeBar.setInputType(awesomeBar.getInputType()
+        mAwesomeBar.setLayoutParams(awesomeBarLayout);
+        mAwesomeBar.setImeOptions(0x2); // Go
+        mAwesomeBar.setInputType(mAwesomeBar.getInputType()
                                 | EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
                                 | EditorInfo.TYPE_TEXT_VARIATION_FILTER);
-        awesomeBar.setOnKeyListener(new View.OnKeyListener() {
+        mAwesomeBar.setOnKeyListener(new View.OnKeyListener() {
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
                     if (event.getAction() != KeyEvent.ACTION_DOWN ||
                         keyCode != KeyEvent.KEYCODE_ENTER) {
                         return false;
                     }
-                    GeckoAppShell.sendEventToGecko(new GeckoEvent(awesomeBar.getText().toString()));
+                    GeckoAppShell.sendEventToGecko(new GeckoEvent(mAwesomeBar.getText().toString()));
                     return true;
                 }
             });
-        addressBar.addView(awesomeBar);
+        addressBar.addView(mAwesomeBar);
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 

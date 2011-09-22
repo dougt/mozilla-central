@@ -1625,20 +1625,33 @@ public class GeckoAppShell
     }
 
     public static void handleGeckoMessage(String message) {
-        Log.i("GeckoShell", "handleGeckoMessage called with " + message);
-
         //        
         //        {"gecko": {
         //                "type": "value",
         //                "event_specific": "value",
         //                ....
-
-
         try {
             JSONObject json = new JSONObject(message);
             JSONObject geckoObject = json.getJSONObject("gecko");
             String type = geckoObject.getString("type");
             Log.i("GeckoShell", "handleGeckoMessage called with type: " + type);
+
+
+            if (type.equals("onLocationChange")) {
+                String value = geckoObject.getString("uri");
+                final CharSequence text = value;
+                getMainHandler().post(new Runnable() { 
+                        public void run() {
+                            GeckoApp.mAwesomeBar.setText(text);
+                        }
+                    });
+                Log.i("GeckoShell", "URI - " + value);
+            } else if (type.equals("onProgressChange")) {
+                long current = geckoObject.getLong("current");
+                long total = geckoObject.getLong("total");
+                Log.i("GeckoShell", "progress - " + current + "/" + total);
+            }
+
 
         } catch (Exception e) {
             Log.i("GeckoShell", "handleGeckoMessage throws "+e);
