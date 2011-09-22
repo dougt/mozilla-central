@@ -1016,8 +1016,6 @@ nsWindow::OnDraw(AndroidGeckoEvent *ae)
 
     NS_ASSERTION(!sview.isNull(), "SurfaceView is null!");
 
-    AndroidBridge::Bridge()->HideProgressDialogOnce();
-
     if (GetLayerManager(nsnull)->GetBackendType() == LayerManager::LAYERS_BASIC) {
         if (sNativeWindow) {
             unsigned char *bits;
