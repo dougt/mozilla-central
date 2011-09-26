@@ -25,6 +25,7 @@ function dump(a) {
 }
 
 var fennecProgressListener = null;
+var fennecEventHandler = null;
 
 function startup() {
 
@@ -36,7 +37,12 @@ function startup() {
     let frame = document.getElementById('home');
     frame.addProgressListener(fennecProgressListener, Ci.nsIWebProgress.NOTIFY_ALL);
 
-    let uri = "about:blank";
+    fennecEventHandler = new FennecEventHandler(frame);
+    window.addEventListener("mousedown", fennecEventHandler, true);
+    window.addEventListener("mouseup", fennecEventHandler, true);
+    window.addEventListener("mousemove", fennecEventHandler, true);
+ 
+    let uri = "about:support";
     try {
         uri = Services.prefs.getCharPref("browser.last.uri");
     } catch (e){};
@@ -132,6 +138,38 @@ FennecProgressListener.prototype = {
 
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                            Ci.nsISupportsWeakReference]),
+};
+
+function FennecEventHandler(browser) {
+   this.browser = browser;
+   this._updateLastPosition(0, 0);
+}
+
+FennecEventHandler.prototype = {
+
+    handleEvent: function(aEvent) {
+	aEvent.stopPropagation();
+	aEvent.preventDefault();
+        switch (aEvent.type) {
+	    case "mousedown":
+	        this._updateLastPosition(aEvent.clientX, aEvent.clientY);
+	        break;
+	    case "mousemove":
+		let dx = aEvent.clientX - this.lastX;
+		let dy = aEvent.clientY - this.lastY;
+		this.browser.contentWindow.wrappedJSObject.scrollBy(-dx, -dy);
+		this._updateLastPosition(aEvent.clientX, aEvent.clientY);
+		break;
+	    case "mouseup":
+	        break;
+	}
+    },
+
+    _updateLastPosition: function(x, y) {
+        this.lastX = x;
+	this.lastY = y;
+    }
+
 };
 
 </script>
