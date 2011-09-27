@@ -1594,6 +1594,7 @@ public class GeckoAppShell
             String type = geckoObject.getString("type");
             Log.i("GeckoShell", "handleGeckoMessage called with type: " + type);
 
+
             if (type.equals("onLocationChange")) {
                 String value = geckoObject.getString("uri");
                 final CharSequence text = value;
@@ -1621,7 +1622,8 @@ public class GeckoAppShell
                                 GeckoApp.mProgressBar.setProgress(current);
                             }
                             else {
-                                GeckoApp.mProgressBar.setIndeterminate(true);
+                                GeckoApp.mProgressBar.setIndeterminate(false);
+                                GeckoApp.mProgressBar.setVisibility(View.GONE);
                             }
                         }
                     });
