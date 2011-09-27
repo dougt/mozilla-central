@@ -38,6 +38,7 @@ function startup() {
     frame.addProgressListener(fennecProgressListener, Ci.nsIWebProgress.NOTIFY_ALL);
 
     fennecEventHandler = new FennecEventHandler(frame);
+    window.addEventListener("click", fennecEventHandler, true);
     window.addEventListener("mousedown", fennecEventHandler, true);
     window.addEventListener("mouseup", fennecEventHandler, true);
     window.addEventListener("mousemove", fennecEventHandler, true);
@@ -148,19 +149,41 @@ function FennecEventHandler(browser) {
 FennecEventHandler.prototype = {
 
     handleEvent: function(aEvent) {
-	aEvent.stopPropagation();
-	aEvent.preventDefault();
         switch (aEvent.type) {
+	    case "click":
+	        if (this.blockClick) {
+		    aEvent.stopPropagation();
+		    aEvent.preventDefault();
+		}
+
+	    	break;
 	    case "mousedown":
-	        this._updateLastPosition(aEvent.clientX, aEvent.clientY);
+		this.startX = aEvent.clientX;
+		this.startY = aEvent.clientY;
+		this.blockClick = false;
+
+		this._updateLastPosition(aEvent.clientX, aEvent.clientY);
+
+		aEvent.stopPropagation();
+		aEvent.preventDefault();
 	        break;
 	    case "mousemove":
 		let dx = aEvent.clientX - this.lastX;
 		let dy = aEvent.clientY - this.lastY;
+
 		this.browser.contentWindow.wrappedJSObject.scrollBy(-dx, -dy);
 		this._updateLastPosition(aEvent.clientX, aEvent.clientY);
+
+		aEvent.stopPropagation();
+		aEvent.preventDefault();
 		break;
 	    case "mouseup":
+	        if (Math.abs(aEvent.clientX - this.startX) > 10 ||
+		    Math.abs(aEvent.clientY - this.startY) > 10) {
+		    this.blockClick = true;
+		}
+		aEvent.stopPropagation();
+		aEvent.preventDefault();
 	        break;
 	}
     },
