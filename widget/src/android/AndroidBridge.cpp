@@ -980,6 +980,7 @@ AndroidBridge::HandleGeckoMessage(const nsAString& aMessage)
         return;
     }
 
+    AutoLocalJNIFrame jniFrame(1);
     jstring jMessage = mJNIEnv->NewString(nsPromiseFlatString(aMessage).get(), aMessage.Length());
     env->CallStaticVoidMethod(mGeckoAppShellClass, jHandleGeckoMessage, jMessage);
 
