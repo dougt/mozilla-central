@@ -604,6 +604,8 @@ class GeckoSurfaceView
 
     // event stuff
     public boolean onTouchEvent(MotionEvent event) {
+        this.requestFocus(FOCUS_UP, null);
+
         GeckoAppShell.sendEventToGecko(new GeckoEvent(event));
         return true;
     }
