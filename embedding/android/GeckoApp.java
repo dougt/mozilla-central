@@ -436,6 +436,7 @@ abstract public class GeckoApp
         awesomeBarLayout.weight = 1.0f;
         mAwesomeBar.setLayoutParams(awesomeBarLayout);
         mAwesomeBar.setImeOptions(0x2); // Go
+        mAwesomeBar.setSingleLine();
         mAwesomeBar.setInputType(mAwesomeBar.getInputType()
                                 | EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
                                 | EditorInfo.TYPE_TEXT_VARIATION_FILTER);
