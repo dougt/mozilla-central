@@ -87,6 +87,7 @@ abstract public class GeckoApp
     private IntentFilter mConnectivityFilter;
     private BroadcastReceiver mConnectivityReceiver;
     public static EditText mAwesomeBar;
+    public static ProgressBar mProgressBar;
 
     enum LaunchState {Launching, WaitButton,
                       Launched, GeckoRunning, GeckoExiting};
@@ -411,6 +412,13 @@ abstract public class GeckoApp
         mainLayout.setLayoutParams(layoutParams);
         mainLayout.setOrientation(LinearLayout.VERTICAL);
 
+        mProgressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,
+                                                                                 10);
+        mProgressBar.setLayoutParams(progressParams);
+        mProgressBar.setVisibility(View.GONE);
+        mainLayout.addView(mProgressBar);
+
         // setup awesome bar
         LinearLayout addressBar = new LinearLayout(this);
         mainLayout.addView(addressBar);
@@ -435,6 +443,10 @@ abstract public class GeckoApp
                         keyCode != KeyEvent.KEYCODE_ENTER) {
                         return false;
                     }
+                    
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    mProgressBar.setIndeterminate(true);
+
                     GeckoAppShell.sendEventToGecko(new GeckoEvent(mAwesomeBar.getText().toString()));
                     return true;
                 }

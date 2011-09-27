@@ -1632,20 +1632,38 @@ public class GeckoAppShell
             String type = geckoObject.getString("type");
             Log.i("GeckoShell", "handleGeckoMessage called with type: " + type);
 
-
             if (type.equals("onLocationChange")) {
                 String value = geckoObject.getString("uri");
                 final CharSequence text = value;
                 getMainHandler().post(new Runnable() { 
                         public void run() {
                             GeckoApp.mAwesomeBar.setText(text);
+                            GeckoApp.mProgressBar.setVisibility(View.GONE);
                         }
                     });
                 Log.i("GeckoShell", "URI - " + value);
             }
             else if (type.equals("onProgressChange")) {
-                long current = geckoObject.getLong("current");
-                long total = geckoObject.getLong("total");
+                final int current = geckoObject.getInt("current");
+                final int total = geckoObject.getInt("total");
+
+                getMainHandler().post(new Runnable() { 
+                        public void run() {
+                            if (total == -1) {
+                                GeckoApp.mProgressBar.setVisibility(View.VISIBLE);
+                                GeckoApp.mProgressBar.setIndeterminate(true);
+                            } else if (current < total) {
+                                GeckoApp.mProgressBar.setVisibility(View.VISIBLE);
+                                GeckoApp.mProgressBar.setIndeterminate(false);
+                                GeckoApp.mProgressBar.setMax(total);
+                                GeckoApp.mProgressBar.setProgress(current);
+                            }
+                            else {
+                                GeckoApp.mProgressBar.setIndeterminate(true);
+                            }
+                        }
+                    });
+
                 Log.i("GeckoShell", "progress - " + current + "/" + total);
             }
             else if (type.equals("hideLoadingScreen")) {
