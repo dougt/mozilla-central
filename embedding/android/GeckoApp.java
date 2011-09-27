@@ -892,13 +892,4 @@ abstract public class GeckoApp
         }
         return super.onKeyDown(keyCode, event);
     }
-
-    @Override
-    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_CALL) {
-            Log.i(LOG_FILE_NAME, "KEYCODE_BACK LONG!");
-            return true;
-        }
-        return super.onKeyLongPress(keyCode, event);
-    }
 }
