@@ -236,6 +236,8 @@ class GeckoSurfaceView
         }
 
         if (doSyncDraw) {
+            GeckoAppShell.scheduleRedraw();
+
             Object syncDrawObject = null;
             try {
                 syncDrawObject = mSyncDraws.take();

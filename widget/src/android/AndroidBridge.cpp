@@ -999,6 +999,8 @@ AndroidBridge::OpenGraphicsLibraries()
         // Try to dlopen libjnigraphics.so for direct bitmap access on
         // Android 2.2+ (API level 8)
         mOpenedGraphicsLibraries = true;
+        mHasNativeWindowAccess = false;
+        mHasNativeBitmapAccess = false;
 
         void *handle = dlopen("/system/lib/libjnigraphics.so", RTLD_LAZY | RTLD_LOCAL);
         if (handle) {
@@ -1006,7 +1008,9 @@ AndroidBridge::OpenGraphicsLibraries()
             AndroidBitmap_lockPixels = (int (*)(JNIEnv *, jobject, void **))dlsym(handle, "AndroidBitmap_lockPixels");
             AndroidBitmap_unlockPixels = (int (*)(JNIEnv *, jobject))dlsym(handle, "AndroidBitmap_unlockPixels");
 
-            ALOG_BRIDGE("Successfully opened libjnigraphics.so");
+            mHasNativeBitmapAccess = AndroidBitmap_getInfo && AndroidBitmap_lockPixels && AndroidBitmap_unlockPixels;
+
+            ALOG_BRIDGE("Successfully opened libjnigraphics.so, have native bitmap access? %d", mHasNativeBitmapAccess);
         }
 
         // Try to dlopen libandroid.so for and native window access on
@@ -1019,11 +1023,10 @@ AndroidBridge::OpenGraphicsLibraries()
             ANativeWindow_lock = (int (*)(void*, void*, void*)) dlsym(handle, "ANativeWindow_lock");
             ANativeWindow_unlockAndPost = (int (*)(void*))dlsym(handle, "ANativeWindow_unlockAndPost");
  
-            ALOG_BRIDGE("Successfully opened libandroid.so");
+            mHasNativeWindowAccess = ANativeWindow_fromSurface && ANativeWindow_release && ANativeWindow_lock && ANativeWindow_unlockAndPost;
+            
+            ALOG_BRIDGE("Successfully opened libandroid.so, have native window access? %d", mHasNativeWindowAccess);
         }
-
-        mHasNativeBitmapAccess = AndroidBitmap_getInfo && AndroidBitmap_lockPixels && AndroidBitmap_unlockPixels;
-        mHasNativeWindowAccess = ANativeWindow_fromSurface && ANativeWindow_release && ANativeWindow_lock && ANativeWindow_unlockAndPost;
     }
 }
 
