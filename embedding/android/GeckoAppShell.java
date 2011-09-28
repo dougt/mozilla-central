@@ -1644,6 +1644,15 @@ public class GeckoAppShell
                     });
                 Log.i("GeckoShell", "URI - " + value);
             }
+            else if (type.equals("onStateChange")) {
+                String state = geckoObject.getString("state");
+                String stateIs = geckoObject.getString("stateIs");
+
+                if (state == "start") {
+                    GeckoApp.mProgressBar.setVisibility(View.VISIBLE);
+                    GeckoApp.mProgressBar.setIndeterminate(true);
+                }
+            }
             else if (type.equals("onProgressChange")) {
                 final int current = geckoObject.getInt("current");
                 final int total = geckoObject.getInt("total");
@@ -1651,17 +1660,14 @@ public class GeckoAppShell
                 getMainHandler().post(new Runnable() { 
                         public void run() {
                             if (total == -1) {
-                                GeckoApp.mProgressBar.setVisibility(View.VISIBLE);
                                 GeckoApp.mProgressBar.setIndeterminate(true);
                             } else if (current < total) {
-                                GeckoApp.mProgressBar.setVisibility(View.VISIBLE);
                                 GeckoApp.mProgressBar.setIndeterminate(false);
                                 GeckoApp.mProgressBar.setMax(total);
                                 GeckoApp.mProgressBar.setProgress(current);
                             }
                             else {
                                 GeckoApp.mProgressBar.setIndeterminate(false);
-                                GeckoApp.mProgressBar.setVisibility(View.GONE);
                             }
                         }
                     });
