@@ -156,55 +156,55 @@ FennecProgressListener.prototype = {
 };
 
 function FennecEventHandler(browser) {
-   this.browser = browser;
-   this._updateLastPosition(0, 0);
+    this.browser = browser;
+    this._updateLastPosition(0, 0);
 }
 
 FennecEventHandler.prototype = {
 
     handleEvent: function(aEvent) {
         switch (aEvent.type) {
-	    case "click":
-	        if (this.blockClick) {
-		    aEvent.stopPropagation();
-		    aEvent.preventDefault();
-		}
+            case "click":
+                if (this.blockClick) {
+                    aEvent.stopPropagation();
+                    aEvent.preventDefault();
+                }
 
-	    	break;
-	    case "mousedown":
-		this.startX = aEvent.clientX;
-		this.startY = aEvent.clientY;
-		this.blockClick = false;
+                break;
+            case "mousedown":
+                this.startX = aEvent.clientX;
+                this.startY = aEvent.clientY;
+                this.blockClick = false;
 
-		this._updateLastPosition(aEvent.clientX, aEvent.clientY);
+                this._updateLastPosition(aEvent.clientX, aEvent.clientY);
 
-		aEvent.stopPropagation();
-		aEvent.preventDefault();
-	        break;
-	    case "mousemove":
-		let dx = aEvent.clientX - this.lastX;
-		let dy = aEvent.clientY - this.lastY;
+                aEvent.stopPropagation();
+                aEvent.preventDefault();
+                break;
+            case "mousemove":
+                let dx = aEvent.clientX - this.lastX;
+                let dy = aEvent.clientY - this.lastY;
 
-		this.browser.contentWindow.wrappedJSObject.scrollBy(-dx, -dy);
-		this._updateLastPosition(aEvent.clientX, aEvent.clientY);
+                this.browser.contentWindow.wrappedJSObject.scrollBy(-dx, -dy);
+                this._updateLastPosition(aEvent.clientX, aEvent.clientY);
 
-		aEvent.stopPropagation();
-		aEvent.preventDefault();
-		break;
-	    case "mouseup":
-	        if (Math.abs(aEvent.clientX - this.startX) > 10 ||
-		    Math.abs(aEvent.clientY - this.startY) > 10) {
-		    this.blockClick = true;
-		}
-		aEvent.stopPropagation();
-		aEvent.preventDefault();
-	        break;
-	}
+                aEvent.stopPropagation();
+                aEvent.preventDefault();
+                break;
+            case "mouseup":
+                if (Math.abs(aEvent.clientX - this.startX) > 10 ||
+                    Math.abs(aEvent.clientY - this.startY) > 10) {
+                    this.blockClick = true;
+                }
+                aEvent.stopPropagation();
+                aEvent.preventDefault();
+                break;
+        }
     },
 
     _updateLastPosition: function(x, y) {
         this.lastX = x;
-	this.lastY = y;
+        this.lastY = y;
     }
 
 };
