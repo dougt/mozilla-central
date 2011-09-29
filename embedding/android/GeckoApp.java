@@ -450,8 +450,21 @@ abstract public class GeckoApp
                     mProgressBar.setVisibility(View.VISIBLE);
                     mProgressBar.setIndeterminate(true);
 
-                    GeckoAppShell.sendEventToGecko(new GeckoEvent(mAwesomeBar.getText().toString()));
+                    // Stick 'http://' on the front if we don't have a valid url
+                    Uri uri = Uri.parse(mAwesomeBar.getText().toString());
+                    if (uri == null || uri.getScheme() == null) {
+                        uri = uri.buildUpon().scheme("http").build();
+                    }
+
+                    GeckoAppShell.sendEventToGecko(new GeckoEvent(uri.toString()));
                     return true;
+                }
+            });
+        mAwesomeBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                public void onFocusChange(View v, boolean hasFocus) {
+                    if (hasFocus) {
+                        mAwesomeBar.selectAll();
+                    }
                 }
             });
         addressBar.addView(mAwesomeBar);
