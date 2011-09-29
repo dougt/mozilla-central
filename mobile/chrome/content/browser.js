@@ -31,6 +31,9 @@ function startup() {
     window.addEventListener("mousedown", fennecEventHandler, true);
     window.addEventListener("mouseup", fennecEventHandler, true);
     window.addEventListener("mousemove", fennecEventHandler, true);
+
+    frame.addEventListener("MozMagnifyGestureStart", fennecEventHandler, true);
+    frame.addEventListener("MozMagnifyGestureUpdate", fennecEventHandler, true);
  
     let uri = "about:support";
     try {
@@ -197,6 +200,21 @@ FennecEventHandler.prototype = {
                 }
                 aEvent.stopPropagation();
                 aEvent.preventDefault();
+                break;
+            case "MozMagnifyGestureStart":
+                this._pinchDelta = 0;
+                break;
+            case "MozMagnifyGestureUpdate":
+                if (!aEvent.delta)
+                    break;
+
+                this._pinchDelta += (aEvent.delta / 100);
+
+                if (Math.abs(this._pinchDelta) >= 1) {
+                    let delta = Math.round(this._pinchDelta);
+                    this.browser.markupDocumentViewer.fullZoom += delta;
+                    this._pinchDelta = 0;
+                }
                 break;
         }
     },
