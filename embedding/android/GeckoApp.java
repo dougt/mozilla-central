@@ -61,6 +61,7 @@ import android.hardware.*;
 import android.util.*;
 import android.net.*;
 import android.database.*;
+import android.database.sqlite.*;
 import android.provider.*;
 import android.content.pm.*;
 import android.content.pm.PackageManager.*;
@@ -88,12 +89,15 @@ abstract public class GeckoApp
     private BroadcastReceiver mConnectivityReceiver;
     public static EditText mAwesomeBar;
     public static ProgressBar mProgressBar;
+    private static SQLiteDatabase mDb;
 
     enum LaunchState {Launching, WaitButton,
                       Launched, GeckoRunning, GeckoExiting};
     private static LaunchState sLaunchState = LaunchState.Launching;
     private static boolean sTryCatchAttached = false;
 
+    private static final int FILE_PICKER_REQUEST = 1;
+    private static final int AWESOMEBAR_REQUEST = 2;
 
     static boolean checkLaunchState(LaunchState checkState) {
         synchronized(sLaunchState) {
@@ -368,8 +372,12 @@ abstract public class GeckoApp
     {
         Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - onCreate");
 
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        mDb = dbHelper.getWritableDatabase();
+
         mAppContext = this;
         mMainHandler = new Handler();
+        mAwesomeBar = new EditText(this);
 
         if (!sTryCatchAttached) {
             sTryCatchAttached = true;
@@ -427,44 +435,26 @@ abstract public class GeckoApp
         favIcon.setImageResource(R.drawable.favicon);
         addressBar.addView(favIcon);
 
-        mAwesomeBar = new EditText(this);
         LinearLayout.LayoutParams awesomeBarLayout =
             new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                           ViewGroup.LayoutParams.WRAP_CONTENT);
         awesomeBarLayout.weight = 1.0f;
+        //mAwesomeBar.setFocusable(false);
         mAwesomeBar.setLayoutParams(awesomeBarLayout);
         mAwesomeBar.setImeOptions(0x2); // Go
         mAwesomeBar.setSingleLine();
         mAwesomeBar.setInputType(mAwesomeBar.getInputType()
                                 | EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
                                 | EditorInfo.TYPE_TEXT_VARIATION_FILTER);
-        mAwesomeBar.setOnKeyListener(new View.OnKeyListener() {
-                public boolean onKey(View v, int keyCode, KeyEvent event) {
-                    if (event.getAction() != KeyEvent.ACTION_DOWN ||
-                        keyCode != KeyEvent.KEYCODE_ENTER) {
-                        return false;
-                    }
-                    
-                    mProgressBar.setVisibility(View.VISIBLE);
-                    mProgressBar.setIndeterminate(true);
 
-                    // Stick 'http://' on the front if we don't have a valid url
-                    Uri uri = Uri.parse(mAwesomeBar.getText().toString());
-                    if (uri == null || uri.getScheme() == null) {
-                        uri = uri.buildUpon().scheme("http").build();
-                    }
+        mAwesomeBar.setOnClickListener(new EditText.OnClickListener() {
+            public void onClick(View v) {
+                Intent searchIntent = new Intent(getBaseContext(), AwesomeBar.class);
+                searchIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY);
 
-                    GeckoAppShell.sendEventToGecko(new GeckoEvent(uri.toString()));
-                    return true;
-                }
-            });
-        mAwesomeBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                public void onFocusChange(View v, boolean hasFocus) {
-                    if (hasFocus) {
-                        mAwesomeBar.selectAll();
-                    }
-                }
-            });
+                startActivityForResult(searchIntent, AWESOMEBAR_REQUEST);
+            }
+        });
         addressBar.addView(mAwesomeBar);
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
@@ -529,6 +519,17 @@ abstract public class GeckoApp
                     }
                 }
             }, 50);
+    }
+
+    public static void addHistoryEntry(String url, String title) {
+        Log.d("GeckoApp", "adding url=" + url + ", title=" + title + " to history");
+        ContentValues values = new ContentValues();
+        values.put("url", url);
+        values.put("title", title);
+        long id = mDb.insertWithOnConflict("moz_places", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        values = new ContentValues();
+        values.put("place_id", id);
+        mDb.insertWithOnConflict("moz_historyvisits", null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
     @Override
@@ -662,6 +663,9 @@ abstract public class GeckoApp
 
         if (surfaceView != null)
             surfaceView.saveLast();
+
+        if (mDb != null)
+            mDb.close();
 
         // Tell Gecko to shutting down; we'll end up calling System.exit()
         // in onXreExit.
@@ -799,8 +803,6 @@ abstract public class GeckoApp
         return status;
     }
 
-    static final int FILE_PICKER_REQUEST = 1;
-
     private SynchronousQueue<String> mFilePickerResult = new SynchronousQueue();
     public String showFilePicker(String aMimeType) {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -827,57 +829,70 @@ abstract public class GeckoApp
     @Override
     protected void onActivityResult(int requestCode, int resultCode,
                                     Intent data) {
-        String filePickerResult = "";
-        if (data != null && resultCode == RESULT_OK) {
-            try {
-                ContentResolver cr = getContentResolver();
-                Uri uri = data.getData();
-                Cursor cursor = GeckoApp.mAppContext.getContentResolver().query(
-                    uri, 
-                    new String[] { OpenableColumns.DISPLAY_NAME },
-                    null, 
-                    null, 
-                    null);
-                String name = null;
-                if (cursor != null) {
-                    try {
-                        if (cursor.moveToNext()) {
-                            name = cursor.getString(0);
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+        case FILE_PICKER_REQUEST:
+            String filePickerResult = "";
+            if (data != null && resultCode == RESULT_OK) {
+                try {
+                    ContentResolver cr = getContentResolver();
+                    Uri uri = data.getData();
+                    Cursor cursor = GeckoApp.mAppContext.getContentResolver().query(
+                        uri, 
+                        new String[] { OpenableColumns.DISPLAY_NAME },
+                        null, 
+                        null, 
+                        null);
+                    String name = null;
+                    if (cursor != null) {
+                        try {
+                            if (cursor.moveToNext()) {
+                                name = cursor.getString(0);
+                            }
+                        } finally {
+                            cursor.close();
                         }
-                    } finally {
-                        cursor.close();
                     }
-                }
-                String fileName = "tmp_";
-                String fileExt = null;
-                int period;
-                if (name == null || (period = name.lastIndexOf('.')) == -1) {
-                    String mimeType = cr.getType(uri);
-                    fileExt = "." + GeckoAppShell.getExtensionFromMimeType(mimeType);
-                } else {
-                    fileExt = name.substring(period);
-                    fileName = name.substring(0, period);
-                }
-                File file = File.createTempFile(fileName, fileExt, sGREDir);
+                    String fileName = "tmp_";
+                    String fileExt = null;
+                    int period;
+                    if (name == null || (period = name.lastIndexOf('.')) == -1) {
+                        String mimeType = cr.getType(uri);
+                        fileExt = "." + GeckoAppShell.getExtensionFromMimeType(mimeType);
+                    } else {
+                        fileExt = name.substring(period);
+                        fileName = name.substring(0, period);
+                    }
+                    File file = File.createTempFile(fileName, fileExt, sGREDir);
 
-                FileOutputStream fos = new FileOutputStream(file);
-                InputStream is = cr.openInputStream(uri);
-                byte[] buf = new byte[4096];
-                int len = is.read(buf);
-                while (len != -1) {
-                    fos.write(buf, 0, len);
-                    len = is.read(buf);
+                    FileOutputStream fos = new FileOutputStream(file);
+                    InputStream is = cr.openInputStream(uri);
+                    byte[] buf = new byte[4096];
+                    int len = is.read(buf);
+                    while (len != -1) {
+                        fos.write(buf, 0, len);
+                        len = is.read(buf);
+                    }
+                    fos.close();
+                    filePickerResult =  file.getAbsolutePath();
+                }catch (Exception e) {
+                    Log.e(LOG_FILE_NAME, "showing file picker", e);
                 }
-                fos.close();
-                filePickerResult =  file.getAbsolutePath();
-            }catch (Exception e) {
-                Log.e(LOG_FILE_NAME, "showing file picker", e);
             }
-        }
-        try {
-            mFilePickerResult.put(filePickerResult);
-        } catch (InterruptedException e) {
-            Log.i(LOG_FILE_NAME, "error returning file picker result", e);
+            try {
+                mFilePickerResult.put(filePickerResult);
+            } catch (InterruptedException e) {
+                Log.i(LOG_FILE_NAME, "error returning file picker result", e);
+            }
+            break;
+        case AWESOMEBAR_REQUEST:
+            if (data != null) {
+                String url = data.getStringExtra(AwesomeBar.URL_KEY);
+                Log.d("GeckoApp", "Got URL from AwesomeBar: " + url);
+                mAwesomeBar.setText(url);
+                GeckoAppShell.sendEventToGecko(new GeckoEvent(url));
+            }
+            break;
         }
     }
 

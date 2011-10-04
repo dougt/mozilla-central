@@ -109,9 +109,11 @@ FennecProgressListener.prototype = {
 
     },
 
-    onLocationChange: function (aBrowser, aWebProgress, aRequest, aLocationURI) {
+    onLocationChange: function (aWebProgress, aRequest, aLocationURI) {
         try {
-            let uri = this.chrome.document.getElementById("home").currentURI.spec;
+            let browser = this.chrome.document.getElementById("home");
+            let uri = browser.currentURI.spec;
+            let title = browser.contentTitle;
             let windowID = 0;//aWebProgress.DOMWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
             
             dump("Setting Last uri to: " + uri);
@@ -121,7 +123,9 @@ FennecProgressListener.prototype = {
                 "gecko": {
                     "type"       :   "onLocationChange", 
                     "windowID"   :   windowID,
-                    "uri"        :   uri
+                    "uri"        :   uri,
+                    "title"      :   uri
+                    // "title"      :   title
                 }};
             
             SendMessageToJava(message);

@@ -54,6 +54,8 @@ JAVAFILES = \
   GeckoInputConnection.java \
   AlertNotification.java \
   SurfaceLockInfo.java \
+  AwesomeBar.java \
+  DatabaseHelper.java \
   $(NULL)
 
 PROCESSEDJAVAFILES = \
@@ -125,6 +127,8 @@ RES_LAYOUT = \
   res/layout/notification_icon_text.xml \
   res/layout/launch_app_list.xml \
   res/layout/launch_app_listitem.xml \
+  res/layout/awesomebar_search.xml \
+  res/layout/awesomebar_row.xml \
   $(NULL)
 
 RES_VALUES = res/values/colors.xml res/values/themes.xml
