@@ -1632,19 +1632,34 @@ public class GeckoAppShell
             String type = geckoObject.getString("type");
             Log.i("GeckoShell", "handleGeckoMessage called with type: " + type);
 
-
-            if (type.equals("onLocationChange")) {
-                final String value = geckoObject.getString("uri");
+            if (type.equals("DOMContentLoaded")) {
+                final String uri = geckoObject.getString("uri");
                 final String title = geckoObject.getString("title");
-                final CharSequence text = value;
+                final String stat = geckoObject.getString("stat");
+                final CharSequence titleText = title;
                 getMainHandler().post(new Runnable() { 
                         public void run() {
-                            GeckoApp.mAwesomeBar.setText(text);
-                            GeckoApp.mProgressBar.setVisibility(View.GONE);
-                            GeckoApp.addHistoryEntry(value, title);
+                            GeckoApp.mAwesomeBar.setText(titleText);
+                            GeckoApp.addHistoryEntry(uri, title);
                         }
                     });
-                Log.i("GeckoShell", "URI - " + value + ", title - " + title);
+                Log.i("GeckoShell", "URI - " + uri + ", title - " + title + ", status - " + stat);
+            }
+            else if (type.equals("log")) {
+                // generic log listener
+                final String msg = geckoObject.getString("msg");
+                Log.i("GeckoShell", "Log: " + msg);
+            }
+            else if (type.equals("onLocationChange")) {
+                final String uri = geckoObject.getString("uri");
+                final CharSequence uriText = uri;
+                Log.i("GeckoShell", "URI - " + uri);
+                getMainHandler().post(new Runnable() { 
+                        public void run() {
+                            GeckoApp.mAwesomeBar.setText(uriText);
+                            GeckoApp.mProgressBar.setVisibility(View.GONE);
+                        }
+                    });
             }
             else if (type.equals("onStateChange")) {
                 String state = geckoObject.getString("state");

@@ -152,10 +152,6 @@ public class AwesomeBar extends ListActivity {
                     if (keyCode != KeyEvent.KEYCODE_ENTER)
                         return false;
 
-                    // move somewhere else...
-                    //mProgressBar.setVisibility(View.VISIBLE);
-                    //mProgressBar.setIndeterminate(true);
-
                     // Stick 'http://' on the front if we don't have a valid url
                     Uri uri = Uri.parse(text.getText().toString());
                     if (uri == null || uri.getScheme() == null) {

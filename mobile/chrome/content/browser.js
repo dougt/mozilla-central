@@ -16,8 +16,35 @@ function dump(a) {
 
 var fennecProgressListener = null;
 var fennecEventHandler = null;
+var responses = {};
 
 function startup() {
+
+    var httpRequestObserver = {  
+
+      observe: function(subject, topic, data) {  
+
+          if (topic == "http-on-examine-response") {  
+              var httpChannel = subject.QueryInterface(Components.interfaces.nsIHttpChannel);  
+              responses[subject.URI.spec] = httpChannel.responseStatus;
+          } 
+      },  
+      
+      get observerService() {  
+          return Components.classes["@mozilla.org/observer-service;1"]  
+                           .getService(Components.interfaces.nsIObserverService);  
+      },  
+      
+      register: function() {  
+          this.observerService.addObserver(this, "http-on-examine-response", false);  
+      },  
+      
+      unregister: function()  {  
+          this.observerService.removeObserver(this, "http-on-examine-response");  
+      }  
+
+    };
+    httpRequestObserver.register();
 
     window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = new nsBrowserAccess(this);
     dump("zerdatime " + Date.now() + " - browser chrome startup finished.");
@@ -95,7 +122,7 @@ FennecProgressListener.prototype = {
       
       let stateIs = "network"
       if (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT)
-          state = document;
+          stateIs = "document";
 
       let message = {
           "gecko": {
@@ -107,26 +134,49 @@ FennecProgressListener.prototype = {
             
       SendMessageToJava(message);
 
+      if (state == "start" && stateIs == "document") {
+          let browser = this.chrome.document.getElementById("home");
+          let uri = browser.currentURI.spec;
+          
+          //TODO: how can we fetch page title faster?
+          browser.contentDocument.addEventListener("DOMContentLoaded", function () {
+
+              let stat = 0;
+              if (responses[uri]) {
+                  stat = responses[uri];
+                  responses = {};
+              }
+
+              SendMessageToJava({
+                  gecko: {
+                      type: "DOMContentLoaded",
+                      windowID: 0,
+                      uri: uri,
+                      title: browser.contentTitle,
+                      stat: stat
+                  }
+              });
+          }, false);
+      }
+
     },
 
     onLocationChange: function (aWebProgress, aRequest, aLocationURI) {
         try {
+
             let browser = this.chrome.document.getElementById("home");
             let uri = browser.currentURI.spec;
-            let title = browser.contentTitle;
-            let windowID = 0;//aWebProgress.DOMWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
-            
+
             dump("Setting Last uri to: " + uri);
             Services.prefs.setCharPref("browser.last.uri", uri);
-            
+
             let message = {
                 "gecko": {
                     "type"       :   "onLocationChange", 
-                    "windowID"   :   windowID,
-                    "uri"        :   uri,
-                    "title"      :   uri
-                    // "title"      :   title
-                }};
+                    "windowID"   :   0,
+                    "uri"        :   uri
+                }
+            };
             
             SendMessageToJava(message);
             
