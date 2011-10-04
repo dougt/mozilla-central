@@ -441,7 +441,7 @@ abstract public class GeckoApp
             new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                           ViewGroup.LayoutParams.WRAP_CONTENT);
         awesomeBarLayout.weight = 1.0f;
-        //mAwesomeBar.setFocusable(false);
+        mAwesomeBar.setFocusable(false);
         mAwesomeBar.setLayoutParams(awesomeBarLayout);
         mAwesomeBar.setImeOptions(0x2); // Go
         mAwesomeBar.setSingleLine();
@@ -898,6 +898,10 @@ abstract public class GeckoApp
             }
             break;
         case AWESOMEBAR_REQUEST:
+
+            mProgressBar.setVisibility(View.VISIBLE);
+            mProgressBar.setIndeterminate(true);
+
             if (data != null) {
                 String url = data.getStringExtra(AwesomeBar.URL_KEY);
                 Log.d("GeckoApp", "Got URL from AwesomeBar: " + url);
@@ -907,7 +911,6 @@ abstract public class GeckoApp
             break;
         }
     }
-
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)  {
