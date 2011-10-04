@@ -1709,15 +1709,17 @@ public class GeckoAppShell
 
 
             if (type.equals("onLocationChange")) {
-                String value = geckoObject.getString("uri");
+                final String value = geckoObject.getString("uri");
+                final String title = geckoObject.getString("title");
                 final CharSequence text = value;
                 getMainHandler().post(new Runnable() { 
                         public void run() {
                             GeckoApp.mAwesomeBar.setText(text);
                             GeckoApp.mProgressBar.setVisibility(View.GONE);
+                            GeckoApp.addHistoryEntry(value, title);
                         }
                     });
-                Log.i("GeckoShell", "URI - " + value);
+                Log.i("GeckoShell", "URI - " + value + ", title - " + title);
             }
             else if (type.equals("onStateChange")) {
                 String state = geckoObject.getString("state");
