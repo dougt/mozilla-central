@@ -171,8 +171,14 @@ class GeckoSurfaceView
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         Log.i(LOG_FILE_NAME, "surfaceChanged: fmt: " + format + " dim: " + width + " " + height);
 
-        if (mShowingLoadScreen)
+        mFormat = format;
+        mWidth = width;
+        mHeight = height;
+
+        if (mShowingLoadScreen) {
             drawStartupBitmap(holder, width, height);
+            return;
+        }
 
         // Force exactly one frame to render
         // because the surface change is only seen after we
@@ -217,9 +223,6 @@ class GeckoSurfaceView
             GeckoApp.checkLaunchState(GeckoApp.LaunchState.GeckoRunning);
         mSyncDraw = doSyncDraw;
 
-        mFormat = format;
-        mWidth = width;
-        mHeight = height;
         mSurfaceValid = true;
 
         Log.i(LOG_FILE_NAME, "surfaceChanged: fmt: " + format + " dim: " + width + " " + height);
@@ -287,6 +290,10 @@ class GeckoSurfaceView
 
     public void surfaceDestroyed(SurfaceHolder holder) {
         Log.i(LOG_FILE_NAME, "surface destroyed");
+        saveLast();
+        mShowingLoadScreen = true;
+        mStartupBitmap = mLastBitmap;
+
         mSurfaceValid = false;
         mSoftwareBuffer = null;
         mSoftwareBufferCopy = null;
@@ -605,6 +612,10 @@ class GeckoSurfaceView
     public boolean onTouchEvent(MotionEvent event) {
         this.requestFocus(FOCUS_UP, null);
 
+        if (mShowingLoadScreen == true) {
+            mShowingLoadScreen = false;
+            surfaceChanged(getHolder(), mFormat, mWidth, mHeight);
+        }
         GeckoAppShell.sendEventToGecko(new GeckoEvent(event));
         return true;
     }

@@ -124,16 +124,6 @@ FennecProgressListener.prototype = {
                 }};
             
             SendMessageToJava(message);
-            
-            if (uri == Services.prefs.getCharPref("browser.last.uri")) {
-                let showMessage = {
-                    "gecko": {
-                        "type"       : "hideLoadingScreen",
-                        "windowID"   : windowID,
-                    }};
-                
-                SendMessageToJava(showMessage);
-            }
         } catch (e) {dump("onLocationChange throws " + e); }
     },
 

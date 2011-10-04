@@ -1749,11 +1749,6 @@ public class GeckoAppShell
 
                 Log.i("GeckoShell", "progress - " + current + "/" + total);
             }
-            else if (type.equals("hideLoadingScreen")) {
-                GeckoApp.surfaceView.mShowingLoadScreen = false;
-            }
-
-
         } catch (Exception e) {
             Log.i("GeckoShell", "handleGeckoMessage throws "+e);
         }

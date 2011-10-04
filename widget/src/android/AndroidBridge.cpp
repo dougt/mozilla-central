@@ -1124,9 +1124,11 @@ AndroidBridge::UnlockBitmap(jobject bitmap)
 bool
 AndroidBridge::HasNativeWindowAccess()
 {
-    OpenGraphicsLibraries();
+    // For now until alexp fixes up the widget code to provide a way to write a surface to disk
+    return false;
+    //    OpenGraphicsLibraries();
 
-    return mHasNativeWindowAccess;
+    //    return mHasNativeWindowAccess;
 }
 
 void*
