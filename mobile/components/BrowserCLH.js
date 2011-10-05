@@ -7,7 +7,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 function resolveURIInternal(aCmdLine, aArgument) {
-  let uri = "about:blank"
+  let uri = null;
   try {
       uri = aCmdLine.resolveURI(aArgument);
       let urifixup = Cc["@mozilla.org/docshell/urifixup;1"].getService(Ci.nsIURIFixup);
@@ -22,27 +22,28 @@ function BrowserCLH() { }
 BrowserCLH.prototype = {
 
   handle: function fs_handle(aCmdLine) {
-      try {
-          let urlParam = aCmdLine.handleFlagWithParam("remote", false);
-          if (urlParam) {
-              // TODO:
-              // browserWin.browserDOMWindow will be null if
-              // the chrome page hasn't loaded yet.  We
-              // should test for this, and reschedule the
-              // event.
-
+      let urlParam = aCmdLine.handleFlagWithParam("remote", false);
+      if (urlParam) {
+          // TODO:
+          // browserWin.browserDOMWindow will be null if
+          // the chrome page hasn't loaded yet.  We
+          // should test for this, and reschedule the
+          // event.
+          aCmdLine.preventDefault = true;
+          try {
               let uri = resolveURIInternal(aCmdLine, urlParam);
+              if (!uri)
+                  return;
               let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
               browserWin.browserDOMWindow.openURI(uri,
                                                   null,
                                                   Ci.nsIBrowserDOMWindow.OPEN_CURRENTWINDOW,
                                                   Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL);
-              aCmdLine.preventDefault = true;
+          } catch (x) {
+              Cc["@mozilla.org/consoleservice;1"]
+                  .getService(Ci.nsIConsoleService)
+                  .logStringMessage("fs_handle exception!:  " + x);
           }
-      } catch (x) {
-          Cc["@mozilla.org/consoleservice;1"]
-              .getService(Ci.nsIConsoleService)
-              .logStringMessage("fs_handle exception!:  " + x);
       }
   },
 
