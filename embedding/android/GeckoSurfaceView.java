@@ -106,11 +106,16 @@ class GeckoSurfaceView
      * Called on main thread
      */
 
+    public String getStartupBitmapFilePath() {
+        File file = new File(Environment.getExternalStorageDirectory(),
+                             "lastScreen.png");
+        return file.toString();
+    }
+
     public void loadStartupBitmap() {
         try {
-            String dir = Environment.getExternalStorageDirectory().toString();
-            final File file = new File(dir, "lastScreen.png");
-            mStartupBitmap = BitmapFactory.decodeFile(file.toString());
+            String filePath = getStartupBitmapFilePath();
+            mStartupBitmap = BitmapFactory.decodeFile(filePath);
         } catch (Exception e) {
             Log.e(LOG_FILE_NAME, e.toString());
         }
@@ -119,8 +124,11 @@ class GeckoSurfaceView
     public void drawStartupBitmap(SurfaceHolder holder, int width, int height) {
         if (mStartupBitmap == null) {
             Log.e(LOG_FILE_NAME, "!!! NO STARTUP BITMAP !!!");
-            mShowingLoadScreen = false;
-            return;
+            loadStartupBitmap();
+            if (mStartupBitmap == null) {
+                mShowingLoadScreen = false;
+                return;
+            }
         }
 
         Canvas c = holder.lockCanvas();
@@ -272,22 +280,10 @@ class GeckoSurfaceView
     }
 
     public void saveLast() {
-        String dir = Environment.getExternalStorageDirectory().toString();
-        final File file = new File(dir, "lastScreen.png");
-        Log.i(LOG_FILE_NAME, file.toString());
-        Bitmap bitmap = mLastBitmap;
-        try {
-            if (bitmap != null) {
-                OutputStream outStream = new FileOutputStream(file);
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
-                outStream.flush();
-                outStream.close();
-            } else {
-                Log.e(LOG_FILE_NAME, "last surfaceview bitmap is null");
-            }
-        } catch (final Exception e) {
-            Log.e(LOG_FILE_NAME, e.toString());
-        }
+        GeckoEvent event = new GeckoEvent();
+        event.mType = GeckoEvent.SAVE_STATE;
+        event.mCharacters = getStartupBitmapFilePath();
+        GeckoAppShell.sendEventToGecko(event);
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
