@@ -924,11 +924,15 @@ abstract public class GeckoApp
             break;
         case AWESOMEBAR_REQUEST:
 
-            mProgressBar.setVisibility(View.VISIBLE);
-            mProgressBar.setIndeterminate(true);
+            if (data != null) {
+                String url = data.getStringExtra(AwesomeBar.URL_KEY);
+                if (url != null && url.length() > 0) {
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    mProgressBar.setIndeterminate(true);
+                    loadUrl(url);
+                }
+            }
 
-            if (data != null)
-                loadUrl(data.getStringExtra(AwesomeBar.URL_KEY));
 
             break;
         }
