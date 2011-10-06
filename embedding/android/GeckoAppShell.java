@@ -1641,6 +1641,7 @@ public class GeckoAppShell
                         public void run() {
                             GeckoApp.mAwesomeBar.setText(titleText);
                             GeckoApp.addHistoryEntry(uri, title);
+                            GeckoApp.mProgressBar.setVisibility(View.GONE);
                         }
                     });
                 Log.i("GeckoShell", "URI - " + uri + ", title - " + title + ", status - " + stat);
@@ -1657,7 +1658,6 @@ public class GeckoAppShell
                 getMainHandler().post(new Runnable() { 
                         public void run() {
                             GeckoApp.mAwesomeBar.setText(uriText);
-                            GeckoApp.mProgressBar.setVisibility(View.GONE);
                         }
                     });
             }
