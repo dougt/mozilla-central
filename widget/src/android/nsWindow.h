@@ -173,8 +173,9 @@ public:
 protected:
     void BringToFront();
     nsWindow *FindTopLevel();
-    bool DrawTo(gfxASurface *targetSurface);
-    bool IsTopLevel();
+    PRBool DrawTo(gfxASurface *targetSurface);
+    PRBool DrawToFile(const nsAString &path);
+    PRBool IsTopLevel();
     void OnIMEAddRange(mozilla::AndroidGeckoEvent *ae);
 
     // Call this function when the users activity is the direct cause of an
