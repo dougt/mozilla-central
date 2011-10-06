@@ -119,12 +119,14 @@ class GeckoSurfaceView
     public void drawStartupBitmap(SurfaceHolder holder, int width, int height) {
         if (mStartupBitmap == null) {
             Log.e(LOG_FILE_NAME, "!!! NO STARTUP BITMAP !!!");
+            mShowingLoadScreen = false;
             return;
         }
 
         Canvas c = holder.lockCanvas();
         if (c == null) {
             Log.e(LOG_FILE_NAME, "!!! NO CANVAS !!!");
+            mShowingLoadScreen = false;
             return;
         }
 
