@@ -672,9 +672,6 @@ abstract public class GeckoApp
     {
         Log.i(LOG_FILE_NAME, "destroy");
 
-        if (surfaceView != null)
-            surfaceView.saveLast();
-
         if (mDb != null)
             mDb.close();
 
@@ -861,7 +858,7 @@ abstract public class GeckoApp
             Log.i("GeckoApp", "going back to page: " + uri);
             loadUrl(uri);
         } else {
-            quit();
+            finish();
         }
     }
 
