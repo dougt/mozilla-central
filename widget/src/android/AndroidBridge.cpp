@@ -933,10 +933,10 @@ AndroidBridge::CreateShortcut(const nsAString& aTitle, const nsAString& aURI, co
 void
 AndroidBridge::PostToJavaThread(nsIRunnable* aRunnable, PRBool aMainThread)
 {
-    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "%s", __PRETTY_FUNCTION__);
+    ALOG_BRIDGE(ANDROID_LOG_INFO, "GeckoBridge", "%s", __PRETTY_FUNCTION__);
     JNIEnv* env = AndroidBridge::AttachThread(false);
     if (!env) {
-        __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "no jni env in %s!!", __PRETTY_FUNCTION__);
+        ALOG_BRIDGE("no jni env in %s!!", __PRETTY_FUNCTION__);
         return;
     }
     mRunnableQueue.AppendObject(aRunnable);
@@ -947,36 +947,36 @@ AndroidBridge::PostToJavaThread(nsIRunnable* aRunnable, PRBool aMainThread)
         env->ExceptionDescribe();
         env->ExceptionClear();
     }
-    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "leaving %s", __PRETTY_FUNCTION__);
+    ALOG_BRIDGE("leaving %s", __PRETTY_FUNCTION__);
 }
 
 void
 AndroidBridge::ExecuteNextRunnable()
 {
-    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "%s", __PRETTY_FUNCTION__);
+    ALOG_BRIDGE("%s", __PRETTY_FUNCTION__);
 
     JNIEnv* env = AndroidBridge::AttachThread(false);
     if (!env) {
-        __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "no jni env in %s!!", __PRETTY_FUNCTION__);
+        ALOG_BRIDGE("no jni env in %s!!", __PRETTY_FUNCTION__);
         return;
     }
 
     if (mRunnableQueue.Count() > 0) {
         nsIRunnable* r = mRunnableQueue[0];
-        __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "going to run %p", r);
+        ALOG_BRIDGE("going to run %p", r);
         r->Run();
         mRunnableQueue.RemoveObjectAt(0);
     }
-    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "leaving %s", __PRETTY_FUNCTION__);
+    ALOG_BRIDGE("leaving %s", __PRETTY_FUNCTION__);
 }
 
 void
 AndroidBridge::HandleGeckoMessage(const nsAString& aMessage)
 {
-    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "%s", __PRETTY_FUNCTION__);
+    ALOG_BRIDGE("%s", __PRETTY_FUNCTION__);
     JNIEnv* env = AndroidBridge::AttachThread(false);
     if (!env) {
-        __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "no jni env in %s!!", __PRETTY_FUNCTION__);
+        ALOG_BRIDGE("no jni env in %s!!", __PRETTY_FUNCTION__);
         return;
     }
 
@@ -989,7 +989,7 @@ AndroidBridge::HandleGeckoMessage(const nsAString& aMessage)
         env->ExceptionDescribe();
         env->ExceptionClear();
     }
-    __android_log_print(ANDROID_LOG_INFO, "GeckoBridge", "leaving %s", __PRETTY_FUNCTION__);
+    ALOG_BRIDGE("leaving %s", __PRETTY_FUNCTION__);
 }
 
 void
