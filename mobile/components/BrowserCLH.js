@@ -6,15 +6,11 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-function resolveURIInternal(aCmdLine, aArgument) {
-  let uri = null;
-  try {
-      uri = aCmdLine.resolveURI(aArgument);
-      let urifixup = Cc["@mozilla.org/docshell/urifixup;1"].getService(Ci.nsIURIFixup);
-      uri = urifixup.createFixupURI(aArgument, 1);
-  } catch (e) {
-  }
-  return uri;
+
+function dump(a) {
+    Cc["@mozilla.org/consoleservice;1"]
+        .getService(Ci.nsIConsoleService)
+        .logStringMessage(a);
 }
 
 function BrowserCLH() { }
@@ -31,9 +27,14 @@ BrowserCLH.prototype = {
           // event.
           aCmdLine.preventDefault = true;
           try {
-              let uri = resolveURIInternal(aCmdLine, urlParam);
+              dump("fs_handle");
+              let urifixup = Cc["@mozilla.org/docshell/urifixup;1"].getService(Ci.nsIURIFixup);
+              dump("fs_handle: " + urlParam);
+              let uri = urifixup.createFixupURI(urlParam, 1);
               if (!uri)
                   return;
+              dump("fs_handle: " + uri);
+
               let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
               browserWin.browserDOMWindow.openURI(uri,
                                                   null,

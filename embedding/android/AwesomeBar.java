@@ -152,14 +152,8 @@ public class AwesomeBar extends ListActivity {
                     if (keyCode != KeyEvent.KEYCODE_ENTER)
                         return false;
 
-                    // Stick 'http://' on the front if we don't have a valid url
-                    Uri uri = Uri.parse(text.getText().toString());
-                    if (uri == null || uri.getScheme() == null) {
-                        uri = uri.buildUpon().scheme("http").build();
-                    }
-
                     Intent resultIntent = new Intent();
-                    resultIntent.putExtra(URL_KEY, uri.toString());
+                    resultIntent.putExtra(URL_KEY, text.getText().toString());
                     setResult(Activity.RESULT_OK, resultIntent);
                     finish();
                     return true;
