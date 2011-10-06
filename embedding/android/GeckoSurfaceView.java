@@ -695,7 +695,9 @@ class GeckoSurfaceView
             case KeyEvent.KEYCODE_BACK:
                 if (!event.isTracking() || event.isCanceled())
                     return false;
-                break;
+                GeckoApp.mAppContext.onBackPressed();
+                return true;
+
             default:
                 break;
         }
