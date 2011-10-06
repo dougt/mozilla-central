@@ -465,6 +465,11 @@ abstract public class GeckoApp
 
         ImageButton reload = new ImageButton(this);
         reload.setImageResource(R.drawable.reload);
+        reload.setOnClickListener(new ImageButton.OnClickListener() {
+                public void onClick(View v) {
+                    doReload();
+                }
+            });
         addressBar.addView(reload);
 
         // setup gecko layout
@@ -838,6 +843,13 @@ abstract public class GeckoApp
         searchIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY);
 
         startActivityForResult(searchIntent, AWESOMEBAR_REQUEST);
+        return true;
+    }
+
+    public boolean doReload() {
+        Log.i("GeckoApp", "Reload requested");
+        String currUrl = sessionHistory.peek();
+        GeckoAppShell.sendEventToGecko(new GeckoEvent(currUrl));
         return true;
     }
 
