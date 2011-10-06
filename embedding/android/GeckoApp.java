@@ -92,6 +92,7 @@ abstract public class GeckoApp
     public static EditText mAwesomeBar;
     public static ProgressBar mProgressBar;
     private static SQLiteDatabase mDb;
+    private static Stack<String> sessionHistory;
 
     enum LaunchState {Launching, WaitButton,
                       Launched, GeckoRunning, GeckoExiting};
@@ -358,14 +359,18 @@ abstract public class GeckoApp
         quitItem.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
         quitItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                 public boolean onMenuItemClick(MenuItem item) {
-                    Log.i(LOG_FILE_NAME, "pleaseKillMe");
-                    if (surfaceView != null)
-                        surfaceView.saveLast();
-                    System.exit(0);
+                    quit();
                     return true;
                 }
             });
         return true;
+    }
+
+    private void quit() {
+        Log.i(LOG_FILE_NAME, "pleaseKillMe");
+        if (surfaceView != null)
+            surfaceView.saveLast();
+        System.exit(0);
     }
 
     /** Called when the activity is first created. */
@@ -376,6 +381,8 @@ abstract public class GeckoApp
 
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         mDb = dbHelper.getWritableDatabase();
+
+        sessionHistory = new Stack<String>();
 
         mAppContext = this;
         mMainHandler = new Handler();
@@ -441,7 +448,7 @@ abstract public class GeckoApp
             new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                           ViewGroup.LayoutParams.WRAP_CONTENT);
         awesomeBarLayout.weight = 1.0f;
-        mAwesomeBar.setFocusable(false);
+        //mAwesomeBar.setFocusable(false);
         mAwesomeBar.setLayoutParams(awesomeBarLayout);
         mAwesomeBar.setImeOptions(0x2); // Go
         mAwesomeBar.setSingleLine();
@@ -451,10 +458,7 @@ abstract public class GeckoApp
 
         mAwesomeBar.setOnClickListener(new EditText.OnClickListener() {
             public void onClick(View v) {
-                Intent searchIntent = new Intent(getBaseContext(), AwesomeBar.class);
-                searchIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY);
-
-                startActivityForResult(searchIntent, AWESOMEBAR_REQUEST);
+                onSearchRequested();
             }
         });
         addressBar.addView(mAwesomeBar);
@@ -527,6 +531,8 @@ abstract public class GeckoApp
         ContentValues values = new ContentValues();
         values.put("url", url);
         values.put("title", title);
+        if (sessionHistory.empty() || !sessionHistory.peek().equals(url))
+            sessionHistory.push(url);
         long id = mDb.insertWithOnConflict("moz_places", null, values, SQLiteDatabase.CONFLICT_REPLACE);
         values = new ContentValues();
         values.put("place_id", id);
@@ -839,6 +845,27 @@ abstract public class GeckoApp
     }
 
     @Override
+    public boolean onSearchRequested() {
+        Intent searchIntent = new Intent(getBaseContext(), AwesomeBar.class);
+        searchIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY);
+
+        startActivityForResult(searchIntent, AWESOMEBAR_REQUEST);
+        return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (sessionHistory.size() > 1) {
+            sessionHistory.pop();
+            String uri = sessionHistory.peek();
+            Log.i("GeckoApp", "going back to page: " + uri);
+            loadUrl(uri);
+        } else {
+            quit();
+        }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode,
                                     Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -902,26 +929,16 @@ abstract public class GeckoApp
             mProgressBar.setVisibility(View.VISIBLE);
             mProgressBar.setIndeterminate(true);
 
-            if (data != null) {
-                String url = data.getStringExtra(AwesomeBar.URL_KEY);
-                Log.d("GeckoApp", "Got URL from AwesomeBar: " + url);
-                mAwesomeBar.setText(url);
-                GeckoAppShell.sendEventToGecko(new GeckoEvent(url));
-            }
+            if (data != null)
+                loadUrl(data.getStringExtra(AwesomeBar.URL_KEY));
+
             break;
         }
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event)  {
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-            Log.i(LOG_FILE_NAME, "KEYCODE_BACK");
-            return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() > 0) {
-            Log.i(LOG_FILE_NAME, "KEYCODE_BACK  11");
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
+    public void loadUrl(String url) {
+        mAwesomeBar.setText(url);
+        GeckoAppShell.sendEventToGecko(new GeckoEvent(url));
     }
+
 }
