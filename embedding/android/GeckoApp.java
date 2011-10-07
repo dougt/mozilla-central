@@ -298,63 +298,54 @@ abstract public class GeckoApp
 
         if (intent == null)
             intent = getIntent();
+        final Intent i = intent;
+        new Thread() {
+            public void run() {
+                File cacheFile = GeckoAppShell.getCacheDir();
+                File libxulFile = new File(cacheFile, "libxul.so");
 
-        //load Gecko in the background
-        new LaunchGecko().execute(intent);
-        return true;
-    }
-
-    //Loading Gecko libraries in the background
-    private class LaunchGecko extends AsyncTask<Intent, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Intent... intents) {
-            Intent intent = intents[0];
-            File cacheFile = GeckoAppShell.getCacheDir();
-            File libxulFile = new File(cacheFile, "libxul.so");
-
-            if ((!libxulFile.exists() ||
-                 new File(getApplication().getPackageResourcePath()).lastModified() >= libxulFile.lastModified())) {
-                File[] libs = cacheFile.listFiles(new FilenameFilter() {
-                        public boolean accept(File dir, String name) {
-                            return name.endsWith(".so");
+                if ((!libxulFile.exists() ||
+                     new File(getApplication().getPackageResourcePath()).lastModified() >= libxulFile.lastModified())) {
+                    File[] libs = cacheFile.listFiles(new FilenameFilter() {
+                            public boolean accept(File dir, String name) {
+                                return name.endsWith(".so");
+                            }
+                        });
+                    if (libs != null) {
+                        for (int i = 0; i < libs.length; i++) {
+                            libs[i].delete();
                         }
-                    });
-                if (libs != null) {
-                    for (int i = 0; i < libs.length; i++) {
-                        libs[i].delete();
                     }
-                }
-             }
+                 }
  
-            // At some point while loading the gecko libs our default locale gets set
-            // so just save it to locale here and reset it as default after the join
-            Locale locale = Locale.getDefault();
-            GeckoAppShell.loadGeckoLibs(
-                getApplication().getPackageResourcePath());
-            Locale.setDefault(locale);
-            Resources res = getBaseContext().getResources();
-            Configuration config = res.getConfiguration();
-            config.locale = locale;
-            res.updateConfiguration(config, res.getDisplayMetrics());
+                // At some point while loading the gecko libs our default locale gets set
+                // so just save it to locale here and reset it as default after the join
+                Locale locale = Locale.getDefault();
+                GeckoAppShell.loadGeckoLibs(
+                    getApplication().getPackageResourcePath());
+                Locale.setDefault(locale);
+                Resources res = getBaseContext().getResources();
+                Configuration config = res.getConfiguration();
+                config.locale = locale;
+                res.updateConfiguration(config, res.getDisplayMetrics());
 
-            Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - runGecko");
+                Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - runGecko");
 
-            // and then fire us up
-            try {
-                String env = intent.getStringExtra("env0");
-                GeckoAppShell.runGecko(getApplication().getPackageResourcePath(),
-                                       intent.getStringExtra("args"),
-                                       intent.getDataString());
-            } catch (Exception e) {
-                Log.e(LOG_FILE_NAME, "top level exception", e);
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                GeckoAppShell.reportJavaCrash(sw.toString());
+                // and then fire us up
+                try {
+                    String env = i.getStringExtra("env0");
+                    GeckoAppShell.runGecko(getApplication().getPackageResourcePath(),
+                                           i.getStringExtra("args"),
+                                           i.getDataString());
+                } catch (Exception e) {
+                    Log.e(LOG_FILE_NAME, "top level exception", e);
+                    StringWriter sw = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw));
+                    GeckoAppShell.reportJavaCrash(sw.toString());
+                }
             }
-
-            return null;
-        }
+        }.start();
+        return true;
     }
 
     @Override
