@@ -92,6 +92,7 @@ abstract public class GeckoApp
     public static EditText mAwesomeBar;
     public static ProgressBar mProgressBar;
     private static SQLiteDatabase mDb;
+    private static DatabaseHelper mDbHelper;
     private static Stack<String> sessionHistory;
 
     enum LaunchState {Launching, WaitButton,
@@ -379,8 +380,7 @@ abstract public class GeckoApp
     {
         Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - onCreate");
 
-        DatabaseHelper dbHelper = new DatabaseHelper(this);
-        mDb = dbHelper.getWritableDatabase();
+        mDbHelper = new DatabaseHelper(this);
 
         sessionHistory = new Stack<String>();
 
@@ -531,17 +531,22 @@ abstract public class GeckoApp
             }, 50);
     }
 
-    public static void addHistoryEntry(String url, String title) {
-        Log.d("GeckoApp", "adding url=" + url + ", title=" + title + " to history");
-        ContentValues values = new ContentValues();
-        values.put("url", url);
-        values.put("title", title);
-        if (sessionHistory.empty() || !sessionHistory.peek().equals(url))
-            sessionHistory.push(url);
-        long id = mDb.insertWithOnConflict("moz_places", null, values, SQLiteDatabase.CONFLICT_REPLACE);
-        values = new ContentValues();
-        values.put("place_id", id);
-        mDb.insertWithOnConflict("moz_historyvisits", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+    public static void addHistoryEntry(final String url, final String title) {
+        new Thread(new Runnable() {
+            public void run() {
+                Log.d("GeckoApp", "adding url=" + url + ", title=" + title + " to history");
+                ContentValues values = new ContentValues();
+                values.put("url", url);
+                values.put("title", title);
+                if (sessionHistory.empty() || !sessionHistory.peek().equals(url))
+                    sessionHistory.push(url);
+                mDb = mDbHelper.getWritableDatabase();
+                long id = mDb.insertWithOnConflict("moz_places", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+                values = new ContentValues();
+                values.put("place_id", id);
+                mDb.insertWithOnConflict("moz_historyvisits", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+            }
+        }).start();
     }
 
     @Override
