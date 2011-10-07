@@ -187,7 +187,8 @@ class GeckoSurfaceView
 
         if (mShowingLoadScreen) {
             drawStartupBitmap(holder, width, height);
-            return;
+            if (mStartupBitmap != null)
+                return;
         }
 
         // Force exactly one frame to render
