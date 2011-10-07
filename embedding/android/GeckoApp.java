@@ -377,36 +377,14 @@ abstract public class GeckoApp
     {
         Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - onCreate");
 
-        Log.i(LOG_FILE_NAME, "create");
-
-        super.onCreate(savedInstanceState);
-        
-        getWindow().setFlags(mFullscreen ?
-                             WindowManager.LayoutParams.FLAG_FULLSCREEN : 0,
-                             WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-        
-        setContentView(R.layout.gecko_app);
-        mAppContext = this;
-
-        // setup gecko layout
-        geckoLayout = (AbsoluteLayout) findViewById(R.id.geckoLayout);
-        surfaceView = new GeckoSurfaceView(this);
-        geckoLayout.addView(surfaceView,
-                            new AbsoluteLayout.LayoutParams(AbsoluteLayout.LayoutParams.MATCH_PARENT,
-                                                            AbsoluteLayout.LayoutParams.MATCH_PARENT,
-                                                            0,
-                                                            0));
-        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - UI almost up");
-
-        if (sGREDir == null)
-            sGREDir = new File(this.getApplicationInfo().dataDir);
-
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         mDb = dbHelper.getWritableDatabase();
 
         sessionHistory = new Stack<String>();
+
+        mAppContext = this;
         mMainHandler = new Handler();
+        mAwesomeBar = new EditText(this);
 
         if (!sTryCatchAttached) {
             sTryCatchAttached = true;
@@ -426,23 +404,94 @@ abstract public class GeckoApp
             });
         }
 
-        mainLayout = (LinearLayout) findViewById(R.id.mainLayout);
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        Log.i(LOG_FILE_NAME, "create");
+        super.onCreate(savedInstanceState);
+
+        if (sGREDir == null)
+            sGREDir = new File(this.getApplicationInfo().dataDir);
+
+        getWindow().setFlags(mFullscreen ?
+                             WindowManager.LayoutParams.FLAG_FULLSCREEN : 0,
+                             WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        if (surfaceView == null)
+            surfaceView = new GeckoSurfaceView(this);
+
+        if (mainLayout != null)
+            mainLayout.removeAllViews();
+
+        mainLayout = new LinearLayout(this);
+        LinearLayout.LayoutParams layoutParams =
+            new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,
+                                          ViewGroup.LayoutParams.FILL_PARENT);
+        mainLayout.setLayoutParams(layoutParams);
+        mainLayout.setOrientation(LinearLayout.VERTICAL);
+
+        mProgressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,
+                                                                                 10);
+        mProgressBar.setLayoutParams(progressParams);
+        mProgressBar.setVisibility(View.GONE);
+        mainLayout.addView(mProgressBar);
 
         // setup awesome bar
-        mAwesomeBar = (EditText) findViewById(R.id.awesomeBar);
+        LinearLayout addressBar = new LinearLayout(this);
+        mainLayout.addView(addressBar);
+
+        ImageButton favIcon = new ImageButton(this);
+        favIcon.setImageResource(R.drawable.favicon);
+        addressBar.addView(favIcon);
+
+        LinearLayout.LayoutParams awesomeBarLayout =
+            new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                                          ViewGroup.LayoutParams.WRAP_CONTENT);
+        awesomeBarLayout.weight = 1.0f;
+        //mAwesomeBar.setFocusable(false);
+        mAwesomeBar.setLayoutParams(awesomeBarLayout);
+        mAwesomeBar.setImeOptions(0x2); // Go
+        mAwesomeBar.setSingleLine();
+        mAwesomeBar.setInputType(mAwesomeBar.getInputType()
+                                | EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                                | EditorInfo.TYPE_TEXT_VARIATION_FILTER);
+
         mAwesomeBar.setOnClickListener(new EditText.OnClickListener() {
             public void onClick(View v) {
                 onSearchRequested();
             }
         });
+        addressBar.addView(mAwesomeBar);
 
-        ImageButton reload = (ImageButton) findViewById(R.id.reload);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
+        ImageButton reload = new ImageButton(this);
+        reload.setImageResource(R.drawable.reload);
         reload.setOnClickListener(new ImageButton.OnClickListener() {
-            public void onClick(View v) {
-                doReload();
-            }
-        });
+                public void onClick(View v) {
+                    doReload();
+                }
+            });
+        addressBar.addView(reload);
+
+        // setup gecko layout
+        if (geckoLayout != null)
+            geckoLayout.removeAllViews();
+
+        geckoLayout = new AbsoluteLayout(this);
+        mainLayout.addView(geckoLayout);
+        
+        geckoLayout.addView(surfaceView,
+                            new AbsoluteLayout.LayoutParams(AbsoluteLayout.LayoutParams.MATCH_PARENT, // level 8
+                                                            AbsoluteLayout.LayoutParams.MATCH_PARENT,
+                                                            0,
+
+                                                            0));
+
+        setContentView(mainLayout,
+                       new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,
+                                                  ViewGroup.LayoutParams.FILL_PARENT));
+
+        Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - UI almost up");
+
 
         mConnectivityFilter = new IntentFilter();
         mConnectivityFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
@@ -452,33 +501,34 @@ abstract public class GeckoApp
                                     LaunchState.Launching))
             return;
 
+
         mMainHandler.post(new Runnable() {
-            public void run() {
-                surfaceView.loadStartupBitmap();
-            }
-        });
+                public void run() {
+                    surfaceView.loadStartupBitmap();
+                }
+            });
 
         final GeckoApp self = this;
  
         mMainHandler.postDelayed(new Runnable() {
-            public void run() {
+                public void run() {
 
-                Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - pre checkLaunchState");
+                    Log.w(LOGTAG, "zerdatime " + new Date().getTime() + " - pre checkLaunchState");
 
-                SharedPreferences settings = getPreferences(Activity.MODE_PRIVATE);
-                String localeCode = settings.getString(getPackageName() + ".locale", "");
-                if (localeCode != null && localeCode.length() > 0)
-                    GeckoAppShell.setSelectedLocale(localeCode);
+                    SharedPreferences settings = getPreferences(Activity.MODE_PRIVATE);
+                    String localeCode = settings.getString(getPackageName() + ".locale", "");
+                    if (localeCode != null && localeCode.length() > 0)
+                        GeckoAppShell.setSelectedLocale(localeCode);
 
-                if (!checkLaunchState(LaunchState.Launched)) {
-                    return;
+                    if (!checkLaunchState(LaunchState.Launched)) {
+                        return;
+                    }
+
+                    if (false) {
+                        checkAndLaunchUpdate();
+                    }
                 }
-
-                if (false) {
-                    checkAndLaunchUpdate();
-                }
-            }
-        }, 50);
+            }, 50);
     }
 
     public static void addHistoryEntry(String url, String title) {
