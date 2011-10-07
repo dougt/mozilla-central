@@ -123,7 +123,6 @@ DEFINES += -DMOZ_ANDROID_SHARED_ID="$(ANDROID_PACKAGE_NAME).sharedID"
 endif
 
 RES_LAYOUT = \
-  res/layout/gecko_app.xml \
   res/layout/notification_progress.xml \
   res/layout/notification_progress_text.xml \
   res/layout/notification_icon_text.xml \
