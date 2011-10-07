@@ -1639,7 +1639,7 @@ public class GeckoAppShell
                 getMainHandler().post(new Runnable() { 
                         public void run() {
                             GeckoApp.mAwesomeBar.setText(titleText);
-                            GeckoApp.addHistoryEntry(uri, title);
+                            GeckoApp.addHistoryEntry(new GeckoApp.HistoryEntry(uri, title));
                             GeckoApp.mProgressBar.setVisibility(View.GONE);
                         }
                     });
