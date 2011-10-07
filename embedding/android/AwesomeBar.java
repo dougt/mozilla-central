@@ -131,49 +131,37 @@ public class AwesomeBar extends ListActivity {
         final EditText text = (EditText)findViewById(R.id.awesomebar_text);
         text.addTextChangedListener(new TextWatcher() {
                 
-                public void afterTextChanged(Editable s) {
-                    // do nothing
-                }
+            public void afterTextChanged(Editable s) {
+                // do nothing
+            }
+            
+            public void beforeTextChanged(CharSequence s, int start, int count,
+                                          int after) {
+                // do nothing
+            }
+            
+            public void onTextChanged(CharSequence s, int start, int before,
+                                      int count) {
+                adapter.getFilter().filter(s.toString());
+            }
                 
-                public void beforeTextChanged(CharSequence s, int start, int count,
-                                              int after) {
-                    // do nothing
-                }
-                
-                public void onTextChanged(CharSequence s, int start, int before,
-                                          int count) {
-                    adapter.getFilter().filter(s.toString());
-                }
-                
-            });
+        });
 
         text.setOnKeyListener(new View.OnKeyListener() {
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (keyCode != KeyEvent.KEYCODE_ENTER)
+                    return false;
 
-                public boolean onKey(View v, int keyCode, KeyEvent event) {
-                    if (keyCode != KeyEvent.KEYCODE_ENTER)
-                        return false;
-
-                    Intent resultIntent = new Intent();
-                    resultIntent.putExtra(URL_KEY, text.getText().toString());
-                    setResult(Activity.RESULT_OK, resultIntent);
-                    finish();
-                    return true;
-                }
-            });
-
-        // String profile = getProfilePath();
-        // if (profile == null) {
-        //     Log.d("AwesomeBar", "User profile does not exist.");
-        //     return;
-        // } else {
-        //     Log.d("AwesomeBar", "Profile path: " + profile);
-        // }
-
-        // mDb = SQLiteDatabase.openDatabase(profile, null, SQLiteDatabase.OPEN_READONLY | SQLiteDatabase.NO_LOCALIZED_COLLATORS);
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra(URL_KEY, text.getText().toString());
+                setResult(Activity.RESULT_OK, resultIntent);
+                finish();
+                return true;
+            }
+        });
 
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         mDb = dbHelper.getReadableDatabase();
-        // mDb = SQLiteDatabase.openDatabase(profile, null, SQLiteDatabase.OPEN_READONLY | SQLiteDatabase.NO_LOCALIZED_COLLATORS);
 
         adapter.setFilterQueryProvider(new FilterQueryProvider() {
             @Override
@@ -181,15 +169,6 @@ public class AwesomeBar extends ListActivity {
 
                 // _id column required for CursorAdapter; provide a dummy here
                 mCursor = mDb.rawQuery(
-                        // "SELECT 0 AS _id, moz_bookmarks.title, moz_places.url, moz_favicons.data AS favicon "
-                        //   + "FROM moz_bookmarks "
-                        //   + "INNER JOIN moz_places "
-                        //   + "ON moz_bookmarks.fk = moz_places.id "
-                        //   + "INNER JOIN moz_favicons "
-                        //   + "ON moz_places.favicon_id = moz_favicons.id "
-                        //   + "WHERE moz_bookmarks.type = 1 AND "
-                        //   + "(moz_places.url LIKE ? OR moz_bookmarks.title LIKE ?) "
-                        //   + "LIMIT 12",
                         "SELECT 0 AS _id, title, url "
                           + "FROM moz_places "
                           + "WHERE (url LIKE ? OR title LIKE ?) "
