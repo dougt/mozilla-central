@@ -58,6 +58,7 @@ import android.graphics.*;
 public class AwesomeBar extends ListActivity {
     public static final String URL_KEY = "url";
     public static final String TITLE_KEY = "title";
+    public static final String CURRENT_URL_KEY = "currenturl";
 
     public class AwesomeBarCursorAdapter extends SimpleCursorAdapter {
         private Cursor _cursor;
@@ -129,6 +130,13 @@ public class AwesomeBar extends ListActivity {
         setListAdapter(adapter);
 
         final EditText text = (EditText)findViewById(R.id.awesomebar_text);
+
+        String currentUrl = getIntent().getStringExtra(CURRENT_URL_KEY);
+        if (currentUrl != null) {
+            text.setText(currentUrl);
+            text.selectAll();
+        }
+
         text.addTextChangedListener(new TextWatcher() {
                 
             public void afterTextChanged(Editable s) {

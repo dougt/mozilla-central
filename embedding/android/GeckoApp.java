@@ -93,7 +93,7 @@ abstract public class GeckoApp
     public static ProgressBar mProgressBar;
     private static SQLiteDatabase mDb;
     private static DatabaseHelper mDbHelper;
-    private static Stack<String> sessionHistory;
+    private static Stack<HistoryEntry> sessionHistory;
 
     enum LaunchState {Launching, WaitButton,
                       Launched, GeckoRunning, GeckoExiting};
@@ -102,6 +102,15 @@ abstract public class GeckoApp
 
     private static final int FILE_PICKER_REQUEST = 1;
     private static final int AWESOMEBAR_REQUEST = 2;
+
+    public static class HistoryEntry {
+        public String uri;
+        public String title;
+        public HistoryEntry(String uri, String title) {
+            this.uri = uri;
+            this.title = title;
+        }
+    }
 
     static boolean checkLaunchState(LaunchState checkState) {
         synchronized(sLaunchState) {
@@ -382,7 +391,7 @@ abstract public class GeckoApp
 
         mDbHelper = new DatabaseHelper(this);
 
-        sessionHistory = new Stack<String>();
+        sessionHistory = new Stack<HistoryEntry>();
 
         mAppContext = this;
         mMainHandler = new Handler();
@@ -448,7 +457,7 @@ abstract public class GeckoApp
             new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                           ViewGroup.LayoutParams.WRAP_CONTENT);
         awesomeBarLayout.weight = 1.0f;
-        //mAwesomeBar.setFocusable(false);
+        mAwesomeBar.setFocusable(false);
         mAwesomeBar.setLayoutParams(awesomeBarLayout);
         mAwesomeBar.setImeOptions(0x2); // Go
         mAwesomeBar.setSingleLine();
@@ -531,15 +540,15 @@ abstract public class GeckoApp
             }, 50);
     }
 
-    public static void addHistoryEntry(final String url, final String title) {
+    public static void addHistoryEntry(final HistoryEntry entry) {
         new Thread(new Runnable() {
             public void run() {
-                Log.d("GeckoApp", "adding url=" + url + ", title=" + title + " to history");
+                Log.d("GeckoApp", "adding uri=" + entry.uri + ", title=" + entry.title + " to history");
                 ContentValues values = new ContentValues();
-                values.put("url", url);
-                values.put("title", title);
-                if (sessionHistory.empty() || !sessionHistory.peek().equals(url))
-                    sessionHistory.push(url);
+                values.put("url", entry.uri);
+                values.put("title", entry.title);
+                if (sessionHistory.empty() || !sessionHistory.peek().uri.equals(entry.uri))
+                    sessionHistory.push(entry);
                 mDb = mDbHelper.getWritableDatabase();
                 long id = mDb.insertWithOnConflict("moz_places", null, values, SQLiteDatabase.CONFLICT_REPLACE);
                 values = new ContentValues();
@@ -855,6 +864,8 @@ abstract public class GeckoApp
     public boolean onSearchRequested() {
         Intent searchIntent = new Intent(getBaseContext(), AwesomeBar.class);
         searchIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_HISTORY);
+        if (!sessionHistory.empty())
+            searchIntent.putExtra(AwesomeBar.CURRENT_URL_KEY, sessionHistory.peek().uri);
 
         startActivityForResult(searchIntent, AWESOMEBAR_REQUEST);
         return true;
@@ -862,8 +873,10 @@ abstract public class GeckoApp
 
     public boolean doReload() {
         Log.i("GeckoApp", "Reload requested");
-        String currUrl = sessionHistory.peek();
-        GeckoAppShell.sendEventToGecko(new GeckoEvent(currUrl));
+        if (sessionHistory.empty())
+            return false;
+        String currUri = sessionHistory.peek().uri;
+        GeckoAppShell.sendEventToGecko(new GeckoEvent(currUri));
         return true;
     }
 
@@ -871,7 +884,7 @@ abstract public class GeckoApp
     public void onBackPressed() {
         if (sessionHistory.size() > 1) {
             sessionHistory.pop();
-            String uri = sessionHistory.peek();
+            String uri = sessionHistory.peek().uri;
             Log.i("GeckoApp", "going back to page: " + uri);
             loadUrl(uri);
         } else {
