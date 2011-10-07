@@ -924,7 +924,7 @@ AndroidBridge::CreateShortcut(const nsAString& aTitle, const nsAString& aURI, co
 void
 AndroidBridge::PostToJavaThread(nsIRunnable* aRunnable, bool aMainThread)
 {
-    ALOG_BRIDGE(ANDROID_LOG_INFO, "GeckoBridge", "%s", __PRETTY_FUNCTION__);
+    ALOG_BRIDGE("GeckoBridge", "%s", __PRETTY_FUNCTION__);
     JNIEnv* env = AndroidBridge::AttachThread(false);
     if (!env) {
         ALOG_BRIDGE("no jni env in %s!!", __PRETTY_FUNCTION__);
