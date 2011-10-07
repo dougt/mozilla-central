@@ -863,16 +863,6 @@ abstract public class GeckoApp
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_MENU:
-                openOptionsMenu();
-                return true;
-        }
-        return false;
-    }
-
-    @Override
     protected void onActivityResult(int requestCode, int resultCode,
                                     Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

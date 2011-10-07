@@ -115,6 +115,7 @@ public class AwesomeBar extends ListActivity {
 
         Log.d("AwesomeBar", "creating awesomebar");
 
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.awesomebar_search);
 
         // Load the list using a custom adapter so we can create the bitmaps

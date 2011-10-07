@@ -1630,7 +1630,6 @@ public class GeckoAppShell
             JSONObject json = new JSONObject(message);
             JSONObject geckoObject = json.getJSONObject("gecko");
             String type = geckoObject.getString("type");
-            Log.i("GeckoShell", "handleGeckoMessage called with type: " + type);
 
             if (type.equals("DOMContentLoaded")) {
                 final String uri = geckoObject.getString("uri");

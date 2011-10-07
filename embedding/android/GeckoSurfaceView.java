@@ -699,7 +699,9 @@ class GeckoSurfaceView
                     return false;
                 GeckoApp.mAppContext.onBackPressed();
                 return true;
-
+            case KeyEvent.KEYCODE_SEARCH:
+            case KeyEvent.KEYCODE_MENU:
+                return false;
             default:
                 break;
         }
