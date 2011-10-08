@@ -141,7 +141,6 @@ class GeckoSurfaceView
         Drawable drawable = new BitmapDrawable(mStartupBitmap);
         drawable.setBounds(0, 0, width, height);
         drawable.draw(c);
-
         holder.unlockCanvasAndPost(c);
     }
 

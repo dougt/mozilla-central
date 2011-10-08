@@ -727,7 +727,11 @@ nsWindow::GetThebesSurface()
     return new gfxImageSurface(gfxIntSize(5,5), gfxImageSurface::ImageFormatRGB24);
 }
 
+<<<<<<< HEAD
 bool
+=======
+PRBool
+>>>>>>> f0c0c4d0cb4c2a3ab3d08f1c78fa30db290796e1
 nsWindow::DrawToFile(const nsAString &path)
 {
     if (!IsTopLevel() || !mIsVisible) {
@@ -749,7 +753,11 @@ nsWindow::DrawToFile(const nsAString &path)
         return PR_FALSE;
     }
 
+<<<<<<< HEAD
     bool result = DrawTo(imgSurface);
+=======
+    PRBool result = DrawTo(imgSurface);
+>>>>>>> f0c0c4d0cb4c2a3ab3d08f1c78fa30db290796e1
     NS_ENSURE_TRUE(result, PR_FALSE);
 
     nsCOMPtr<imgIEncoder> encoder = do_CreateInstance("@mozilla.org/image/encoder;2?type=image/png");

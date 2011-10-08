@@ -410,10 +410,10 @@ abstract public class GeckoApp
         if (sGREDir == null)
             sGREDir = new File(this.getApplicationInfo().dataDir);
 
-        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        mDbHelper = new DatabaseHelper(this);
 
         sessionHistory = new Stack<HistoryEntry>();
-        mDbHelper = new DatabaseHelper(this);
+
         mMainHandler = new Handler();
 
         if (!sTryCatchAttached) {

@@ -13,7 +13,6 @@ function dump(a) {
         .logStringMessage(a);
 }
 
-
 var fennecProgressListener = null;
 var fennecEventHandler = null;
 var responses = {};
@@ -67,9 +66,6 @@ function startup() {
     try {
         uri = Services.prefs.getCharPref("browser.last.uri");
     } catch (e){};
-
-    dump("Last uri: "+ uri);
-
     // XXX maybe we don't do this if the launch was kicked off from external
     frame.loadURI(uri, null, null);
 }
