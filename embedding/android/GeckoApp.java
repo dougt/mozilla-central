@@ -412,7 +412,8 @@ abstract public class GeckoApp
 
         DatabaseHelper dbHelper = new DatabaseHelper(this);
 
-        sessionHistory = new Stack<String>();
+        sessionHistory = new Stack<HistoryEntry>();
+        mDbHelper = new DatabaseHelper(this);
         mMainHandler = new Handler();
 
         if (!sTryCatchAttached) {
@@ -454,10 +455,6 @@ abstract public class GeckoApp
         mConnectivityFilter = new IntentFilter();
         mConnectivityFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         mConnectivityReceiver = new GeckoConnectivityReceiver();
-
-        if (!checkAndSetLaunchState(LaunchState.PreLaunch,
-                                    LaunchState.Launching))
-            return;
 
         mMainHandler.post(new Runnable() {
             public void run() {

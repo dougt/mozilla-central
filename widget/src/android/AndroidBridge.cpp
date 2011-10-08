@@ -651,7 +651,7 @@ AndroidBridge::SetFullScreen(bool aFullScreen)
 }
 
 void
-AndroidBridge::PerformHapticFeedback(PRBool aIsLongPress)
+AndroidBridge::PerformHapticFeedback(bool aIsLongPress)
 {
     ALOG_BRIDGE("AndroidBridge::PerformHapticFeedback");
     mJNIEnv->CallStaticVoidMethod(mGeckoAppShellClass,

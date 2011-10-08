@@ -1636,6 +1636,12 @@ public class GeckoAppShell
                 final String title = geckoObject.getString("title");
                 final String stat = geckoObject.getString("stat");
                 final CharSequence titleText = title;
+
+                if (uri == null || title == null) {
+                    Log.i("GeckoShell", "URI - " + uri + " TITLE - " + title);
+                    return;
+                }
+
                 getMainHandler().post(new Runnable() { 
                         public void run() {
                             GeckoApp.mAwesomeBar.setText(titleText);
