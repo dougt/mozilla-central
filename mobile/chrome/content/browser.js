@@ -149,7 +149,7 @@ FennecProgressListener.prototype = {
               SendMessageToJava({
                   gecko: {
                       type: "DOMContentLoaded",
-                      windowID: 0,
+                      windowID: windowID,
                       uri: uri,
                       title: browser.contentTitle,
                       stat: stat
@@ -165,6 +165,7 @@ FennecProgressListener.prototype = {
 
             let browser = this.chrome.document.getElementById("home");
             let uri = browser.currentURI.spec;
+            let windowID = 0;
 
             dump("Setting Last uri to: " + uri);
             Services.prefs.setCharPref("browser.last.uri", uri);
@@ -172,7 +173,7 @@ FennecProgressListener.prototype = {
             let message = {
                 "gecko": {
                     "type"       :   "onLocationChange", 
-                    "windowID"   :   0,
+                    "windowID"   :   windowID,
                     "uri"        :   uri
                 }
             };
