@@ -1342,6 +1342,7 @@ NS_IMETHODIMP nsEditor::GetInlineSpellChecker(bool autoCreate,
 NS_IMETHODIMP nsEditor::Observe(nsISupports* aSubj, const char *aTopic,
                                 const PRUnichar *aData)
 {
+#ifdef MOZ_SPELLCHECK
   NS_ASSERTION(!strcmp(aTopic,
                        SPELLCHECK_DICTIONARY_UPDATE_NOTIFICATION),
                "Unexpected observer topic");
@@ -1365,6 +1366,9 @@ NS_IMETHODIMP nsEditor::Observe(nsISupports* aSubj, const char *aTopic,
   }
 
   return NS_OK;
+#else
+  return NS_OK;
+#endif
 }
 
 NS_IMETHODIMP nsEditor::SyncRealTimeSpell()
